@@ -25,11 +25,13 @@ class SensorData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(20), nullable=False)
-    humidity = db.Column(db.Float, nullable=False)
-    temperature = db.Column(db.Float, nullable=False)
-    waterTemperature = db.Column(db.Float, nullable=False)
-    waterLevel = db.Column(db.Float, nullable=False)
-    phValue = db.Column(db.Float, nullable=False)
+    p1 = db.Column(db.Float, nullable=False)
+    p2 = db.Column(db.Float, nullable=False)
+    p3 = db.Column(db.Float, nullable=False)
+    t1 = db.Column(db.Float, nullable=False)
+    t2 = db.Column(db.Float, nullable=False)
+    # t3 = db.Column(db.Float, nullable=False)
+    # t4 = db.Column(db.Float, nullable=False)
 
 # Create the database and the table
 with app.app_context():
@@ -39,6 +41,9 @@ with app.app_context():
 # Serial communication
 ser = None
 latest_message = None
+data = None
+status = None
+# data_lock = threading.Lock()
 
 def close_serial():
     global ser
@@ -63,12 +68,13 @@ def serial_communication():
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             try:
-                ser = serial.Serial(port.device, 9600, timeout=1)
+                ser = serial.Serial(port.device, 115200, timeout=1)
                 print(f"Connected to {port.device}")
+                print(ser)
                 return True
             except serial.SerialException as e:
                 print(f"Error opening serial port {port.device}: {e}")
-                return False
+        return False
 
     while True:
         if ser is None or not ser.is_open:
@@ -85,7 +91,8 @@ def serial_communication():
                 if '\n' in buffer:  # Assuming messages end with a newline
                     message, buffer = buffer.split('\n', 1)
                     latest_message = message.strip()  # Update the global variable
-                    print(f"message: {latest_message}")
+                    # print(f"message: {latest_message}")
+                    filter_message(latest_message)
                 else:
                     print("incomplete message:", buffer)
         except UnicodeDecodeError:
@@ -96,12 +103,24 @@ def serial_communication():
         except Exception as e:
             print(f"Unexpected error: {e}")
             close_serial()
-            break
+            # break
 
 # Start the serial communication in a separate thread
 threading.Thread(target=serial_communication, daemon=True).start()
 
-
+def filter_message(message):
+    global data
+    global status
+    if message.startswith("data:"):
+        data = message[5:]
+        print("Data message received:", data)
+        # Process data message
+    elif message.startswith("status:"):
+        status = message[7:]
+        print("Status message received:", status)
+        # Process status message
+    else:
+        print("Unknown message type:", message)
 
 # @app.route('/data', methods=['POST'])
 # def receive_data():
@@ -115,11 +134,15 @@ threading.Thread(target=serial_communication, daemon=True).start()
 #         return jsonify({"status": "error", "message": str(e)}), 400
 
 @app.route('/visualize', methods=['GET'])
+
 def visualize_data():
+    if latest_message.startswith("data:"):
+        data = latest_message[5:]
     # Here you would implement your visualization logic
     # For simplicity, we just return the stored data
     # return jsonify(data_store), 200
-    send_data("Hello Arduino")
+    # send_data("Hello Arduino")
+    print("from visualization message received:", data)
     return render_template('visualize.html')
 
 @app.route('/')
