@@ -18,6 +18,16 @@ app = Flask(__name__)
 CORS(app)
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+    emit('new_data_event', {'pressure1': 47.47, 'pressure2': 93.93, 'pressure3': 47.47})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+
 # Store data in a global variable
 # data_store = []
 
@@ -203,13 +213,6 @@ def filter_message(message):
 #     except Exception as e:
 #         return jsonify({"status": "error", "message": str(e)}), 400
 
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
-
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
 
 @app.route('/visualize', methods=['GET'])
 
@@ -256,5 +259,5 @@ def index():
 
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000,debug=True)
-    # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # app.run(host='0.0.0.0', port=5000,debug=True)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)

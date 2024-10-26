@@ -21,7 +21,7 @@
         </div>
         <button onclick="window.location.href='/'">Back to Home</button>
     </div> #}
-    <canvas id="pressureChart" width="400" height="200"></canvas>
+    <canvas id="pressureChart" width="200" height="100"></canvas>
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const ctx = document.getElementById('pressureChart').getContext('2d');
@@ -58,8 +58,8 @@
                                 unit: 'second',
                                 tooltipFormat: 'HH:mm:ss:SSS',
                                 displayFormats: {
-                                    second: 'HH:mm:ss'
-                                }
+                                    second: 'ss'
+                                }  
                             },
                             display: true,
                             title: {
@@ -81,6 +81,7 @@
             };
 
             const pressureChart = new Chart(ctx, config);
+            
             const fetchData = () => {
                 fetch('/latest_data')
                     .then(response => response.json())
@@ -107,6 +108,8 @@
 
             // Fetch data every 1 second
             setInterval(fetchData, 1000);
+            
+            
             {#// Connect to the WebSocket server
             const socket = io();
 
