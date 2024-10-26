@@ -9,6 +9,8 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Use CDN for Chart.js Date Adapter -->
     <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
+    <!-- Use CDN for Socket.IO -->
+    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
     {# <div class="container">
@@ -79,7 +81,6 @@
             };
 
             const pressureChart = new Chart(ctx, config);
-
             const fetchData = () => {
                 fetch('/latest_data')
                     .then(response => response.json())
@@ -87,7 +88,11 @@
                         console.log('Data:', data);
                         if (data.length > 0) {
                             const latestData = data[0];
-                            const time = latestData.time; // Convert time to Date object
+                            const timeString = latestData.time;
+                            const [hours, minutes, seconds, milliseconds] = timeString.split(':').map(Number);
+                            const time = new Date();
+                            time.setHours(hours, minutes, seconds, milliseconds); // Set the time correctly
+
                             const pressure1 = latestData.pressure1;
                             console.log('time:', time, 'pressure1:', pressure1);
 
@@ -102,6 +107,44 @@
 
             // Fetch data every 1 second
             setInterval(fetchData, 1000);
+            {#// Connect to the WebSocket server
+            const socket = io();
+
+            // Confirm WebSocket connection
+            socket.on('connect', () => {
+                console.log('WebSocket connected');
+            });
+
+            // Listen for new data from the server
+            socket.on('new_data', (latestData) => {
+                console.log('New data received:', latestData);
+                const timeString = latestData.time;
+                const [hours, minutes, seconds, milliseconds] = timeString.split(':').map(Number);
+                const time = new Date();
+                time.setHours(hours, minutes, seconds, milliseconds); // Set the time correctly
+
+                const pressure1 = latestData.pressure1;
+                console.log('time:', time, 'pressure1:', pressure1);
+
+                // Add new data to the chart
+                pressureChart.data.labels.push(time);
+                pressureChart.data.datasets[0].data.push(pressure1);
+                pressureChart.update();
+            });
+
+            // Debugging: Log any errors
+            socket.on('connect_error', (error) => {
+                console.error('WebSocket connection error:', error);
+            });
+
+            socket.on('error', (error) => {
+                console.error('WebSocket error:', error);
+            });
+
+            // Debugging: Log all events
+            socket.onAny((event, ...args) => {
+                console.log(`Event received: ${event}`, args);
+            });#}
         });
     </script>
 </body>

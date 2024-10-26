@@ -1,7 +1,9 @@
 # .venv\Scripts\activate
 # pip install Flask-SQLAlchemy
 # pip install -U flask-cors
+# pip install flask-socketio
 from flask import Flask, jsonify , render_template
+from flask_socketio import SocketIO, emit
 import serial
 import serial.tools.list_ports
 import threading
@@ -9,9 +11,12 @@ from flask_sqlalchemy import SQLAlchemy
 import time
 from datetime import datetime
 import json
+from flask_cors import CORS
 # import requests
 
 app = Flask(__name__)
+CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
 
 # Store data in a global variable
 # data_store = []
@@ -43,6 +48,7 @@ class StatusData(db.Model):
 # Create the database and the table
 with app.app_context():
     db.create_all()
+
 
 
 # Serial communication
@@ -146,6 +152,18 @@ def filter_message(message):
             )
             db.session.add(new_record)
             db.session.commit()
+            # Emit the new data to all connected clients
+            # print("Emitting new data event")
+            # socketio.emit('new_data', {
+            #     'date': date,
+            #     'time': time,
+            #     'pressure1': pressure1,
+            #     'pressure2': pressure2,
+            #     'pressure3': pressure3,
+            #     'temperature1': temperature1,
+            #     'temperature2': temperature2
+            # })
+            # print("New data event emitted")
         # Process data message
     
     elif message.startswith("status:"):
@@ -185,23 +203,31 @@ def filter_message(message):
 #     except Exception as e:
 #         return jsonify({"status": "error", "message": str(e)}), 400
 
+@socketio.on('connect')
+def handle_connect():
+    print('Client connected')
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
 @app.route('/visualize', methods=['GET'])
 
 def visualize_data():
-    records = SensorData.query.order_by(SensorData.id.desc()).limit(1).all()
-    data = [
-        {"date": record.date,
-        "time":record.time,
-        "pressure1": record.pressure1,
-        "pressure2": record.pressure2,
-        "pressure3": record.pressure3,
-        "temperature1": record.temperature1,
-        "temperature2": record.temperature2}
-        for record in records
-    ]
+    # records = SensorData.query.order_by(SensorData.id.desc()).limit(1).all()
+    # data = [
+    #     {"date": record.date,
+    #     "time":record.time,
+    #     "pressure1": record.pressure1,
+    #     "pressure2": record.pressure2,
+    #     "pressure3": record.pressure3,
+    #     "temperature1": record.temperature1,
+    #     "temperature2": record.temperature2}
+    #     for record in records
+    # ]
     # global data
     # return jsonify(data), 200
-    return render_template('visualize.html',data=data)
+    return render_template('visualize.html')
 
 @app.route('/latest_data', methods=['GET'])
 def latest_data():
@@ -231,3 +257,4 @@ def index():
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)
+    # socketio.run(app, host='0.0.0.0', port=5000, debug=True)
