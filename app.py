@@ -1,18 +1,20 @@
 # .venv\Scripts\activate
 # pip install Flask-SQLAlchemy
 # pip install -U flask-cors
-from flask import Flask, request, jsonify , render_template
+from flask import Flask, jsonify , render_template
 import serial
 import serial.tools.list_ports
 import threading
 from flask_sqlalchemy import SQLAlchemy
 import time
+from datetime import datetime
+import json
 # import requests
 
 app = Flask(__name__)
 
 # Store data in a global variable
-data_store = []
+# data_store = []
 
 # Configure the SQLite database
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///sensor_data.db'
@@ -25,14 +27,19 @@ class SensorData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(20), nullable=False)
-    p1 = db.Column(db.Float, nullable=False)
-    p2 = db.Column(db.Float, nullable=False)
-    p3 = db.Column(db.Float, nullable=False)
-    t1 = db.Column(db.Float, nullable=False)
-    t2 = db.Column(db.Float, nullable=False)
+    pressure1 = db.Column(db.Float, nullable=False)
+    pressure2 = db.Column(db.Float, nullable=False)
+    pressure3 = db.Column(db.Float, nullable=False)
+    temperature1 = db.Column(db.Float, nullable=False)
+    temperature2 = db.Column(db.Float, nullable=False)
     # t3 = db.Column(db.Float, nullable=False)
     # t4 = db.Column(db.Float, nullable=False)
-
+# Define the StatusData model
+class StatusData(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    k1 = db.Column(db.Integer, nullable=False)
+    k2 = db.Column(db.Integer, nullable=False)
+    k3 = db.Column(db.Integer, nullable=False)
 # Create the database and the table
 with app.app_context():
     db.create_all()
@@ -109,15 +116,60 @@ def serial_communication():
 threading.Thread(target=serial_communication, daemon=True).start()
 
 def filter_message(message):
-    global data
-    global status
+
     if message.startswith("data:"):
+        global data
         data = message[5:]
         print("Data message received:", data)
+        # Convert the data string to a dictionary
+        data_dict = json.loads(data)
+        # Assign values to variables
+        pressure1 = data_dict.get('p1')
+        pressure2 = data_dict.get('p2')
+        pressure3 = data_dict.get('p3')
+        temperature1 = data_dict.get('t1')
+        temperature2 = data_dict.get('t2')
+        date = datetime.now().strftime('%Y-%m-%d')
+        time = datetime.now().strftime('%H:%M:%S:%f')[:-3]
+        print(f"pressure1: {pressure1}, pressure2: {pressure2}, pressure3: {pressure3}, temperature1: {temperature1}, temperature2: {temperature2}")
+        
+        # Perform database operations within the application context
+        with app.app_context():
+            new_record = SensorData(
+            date=date,
+            time=time, 
+            pressure1=pressure1,
+            pressure2=pressure2,
+            pressure3=pressure3,
+            temperature1=temperature1,
+            temperature2=temperature2
+            )
+            db.session.add(new_record)
+            db.session.commit()
         # Process data message
+    
     elif message.startswith("status:"):
+        global status
         status = message[7:]
         print("Status message received:", status)
+        # Convert the status string to a dictionary
+        status_dict = json.loads(status)
+        # Assign values to variables
+        k1 = status_dict.get('k1')
+        k2 = status_dict.get('k2')
+        k3 = status_dict.get('k3')
+        
+        # Perform database operations within the application context
+        with app.app_context():
+            existing_record = StatusData.query.first()
+            if existing_record is None:
+                new_status = StatusData(k1=k1, k2=k2, k3=k3)
+                db.session.add(new_status)
+            else:
+                existing_record.k1 = k1
+                existing_record.k2 = k2
+                existing_record.k3 = k3
+            db.session.commit()
         # Process status message
     else:
         print("Unknown message type:", message)
@@ -136,19 +188,46 @@ def filter_message(message):
 @app.route('/visualize', methods=['GET'])
 
 def visualize_data():
-    if latest_message.startswith("data:"):
-        data = latest_message[5:]
-    # Here you would implement your visualization logic
-    # For simplicity, we just return the stored data
-    # return jsonify(data_store), 200
-    # send_data("Hello Arduino")
-    print("from visualization message received:", data)
-    return render_template('visualize.html')
+    records = SensorData.query.order_by(SensorData.id.desc()).limit(1).all()
+    data = [
+        {"date": record.date,
+        "time":record.time,
+        "pressure1": record.pressure1,
+        "pressure2": record.pressure2,
+        "pressure3": record.pressure3,
+        "temperature1": record.temperature1,
+        "temperature2": record.temperature2}
+        for record in records
+    ]
+    # global data
+    # return jsonify(data), 200
+    return render_template('visualize.html',data=data)
+
+@app.route('/latest_data', methods=['GET'])
+def latest_data():
+    records = SensorData.query.order_by(SensorData.id.desc()).limit(1).all()
+    data = [
+        {
+            "date": record.date,
+            "time": record.time,
+            "pressure1": record.pressure1,
+            "pressure2": record.pressure2,
+            "pressure3": record.pressure3,
+            "temperature1": record.temperature1,
+            "temperature2": record.temperature2
+        }
+        for record in records
+    ]
+    return jsonify(data), 200
+
 
 @app.route('/')
 def index():
     # print(f"message: {latest_message}")
+    print("index Status message received:------------------------", status)
     return render_template('index.html')
+
+
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000,debug=True)

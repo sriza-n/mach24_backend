@@ -5,24 +5,104 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Data Visualization</title>
     <link rel="stylesheet" href="static/style.css">
+    <!-- Use CDN for Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Use CDN for Chart.js Date Adapter -->
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
 </head>
 <body>
-    <div class="container">
+    {# <div class="container">
         <h1>Data Visualization</h1>
         <div id="dataContainer"></div>
         <div class="test slide-in">
             test content
         </div>
         <button onclick="window.location.href='/'">Back to Home</button>
-    </div>
+    </div> #}
+    <canvas id="pressureChart" width="400" height="200"></canvas>
     <script>
-        fetch('/data')
-            .then(response => response.json())
-            .then(data => {
-                const dataContainer = document.getElementById('dataContainer');
-                dataContainer.innerHTML = JSON.stringify(data, null, 2);
-            })
-            .catch(error => console.error('Error fetching data:', error));
+        document.addEventListener('DOMContentLoaded', (event) => {
+            const ctx = document.getElementById('pressureChart').getContext('2d');
+
+            const data = {
+                labels: [], // Time labels
+                datasets: [{
+                    label: 'Pressure 1',
+                    data: [], // Pressure data
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    tension: 0.4
+                }]
+            };
+
+            const config = {
+                type: 'line',
+                data: data,
+                options: {
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Real-time Pressure Data'
+                        },
+                    },
+                    interaction: {
+                        intersect: false,
+                    },
+                    scales: {
+                        x: {
+                            type: 'time',
+                            time: {
+                                unit: 'second',
+                                tooltipFormat: 'HH:mm:ss:SSS',
+                                displayFormats: {
+                                    second: 'HH:mm:ss'
+                                }
+                            },
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Time'
+                            }
+                        },
+                        y: {
+                            display: true,
+                            title: {
+                                display: true,
+                                text: 'Pressure'
+                            },
+                            suggestedMin: 0,
+                            suggestedMax: 100
+                        }
+                    }
+                }
+            };
+
+            const pressureChart = new Chart(ctx, config);
+
+            const fetchData = () => {
+                fetch('/latest_data')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Data:', data);
+                        if (data.length > 0) {
+                            const latestData = data[0];
+                            const time = latestData.time; // Convert time to Date object
+                            const pressure1 = latestData.pressure1;
+                            console.log('time:', time, 'pressure1:', pressure1);
+
+                            // Add new data to the chart
+                            pressureChart.data.labels.push(time);
+                            pressureChart.data.datasets[0].data.push(pressure1);
+                            pressureChart.update();
+                        }
+                    })
+                    .catch(error => console.error('Error fetching data:', error));
+            };
+
+            // Fetch data every 1 second
+            setInterval(fetchData, 1000);
+        });
     </script>
 </body>
 </html>
