@@ -1,0 +1,3 @@
+rom CDN and reference locally
+Invoke-WebRequest -Uri "https://unpkg.com/@rive-app/canvas@2.7.0" -OutFile "static\lib\rive.js"
+Invoke-WebRequest -Uri "https://unpkg.com/@rive-app/canvas@2.7.0/rive.wasm" -OutFile "static\lib\rive.wasm"

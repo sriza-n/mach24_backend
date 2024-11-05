@@ -12,11 +12,31 @@ import time
 from datetime import datetime
 import json
 from flask_cors import CORS
-# import requests
+from flask import send_from_directory
+import os
+# from flask_talisman import Talisman
+# from werkzeug.middleware.proxy_fix import ProxyFix
+
+
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={r"/*": {"origins": "*"}})
+# Talisman(app, content_security_policy=None)
+# app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
 socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=True)
+
+
+# Define the absolute path to node_modules
+# NODE_MODULES_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static\node_modules')
+
+# @app.route('/node_modules/<path:filename>')
+# def serve_node_modules(filename):
+#     try:
+#         return send_from_directory(NODE_MODULES_PATH, filename)
+#     except Exception as e:
+#         print(f"Error serving node_modules: {e}")
+#         return f"File not found: {filename}", 404
+    
 
 @socketio.on('connect')
 def handle_connect():
@@ -86,23 +106,24 @@ def send_data(data):
 def serial_communication():
     global ser
     global latest_message
-    buffer = ""
 
     def connect_to_serial():
         global ser
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             try:
-                ser = serial.Serial(port.device, 9600, timeout=1)
+                ser = serial.Serial(port.device, 115200)
                 print(f"Connected to {port.device}")
                 print(ser)
                 return True
             except serial.SerialException as e:
                 print(f"Error opening serial port {port.device}: {e}")
+            if e.errno == 13:
+                print("Permission denied. Try running the script as an administrator.")
         return False
 
     while True:
-        if ser is None or not ser.is_open:
+        if ser is None:
             socketio.emit('new_data', {'message': 'Attempting to connect to serial port'})
             print("Attempting to connect to serial port...")
             if not connect_to_serial():
@@ -122,6 +143,7 @@ def serial_communication():
                 # else:
                 #     print("incomplete message:", buffer)
                 message = raw_data.decode('utf-8').strip()
+                # print(f"Received: {message}")
                 filter_message(message)
         except UnicodeDecodeError:
             print(f"Failed to decode: {raw_data}")
@@ -135,7 +157,6 @@ def serial_communication():
 
 
 def filter_message(message):
-
     if message.startswith("data:"):
         global data
         data = message[5:]
@@ -143,73 +164,67 @@ def filter_message(message):
         # Convert the data string to a dictionary
         data_dict = json.loads(data)
         # Assign values to variables
+        date_time = datetime.now()
+        date = date_time.strftime('%Y-%m-%d')
+        time = date_time.strftime('%H:%M:%S:%f')[:-3]
         pressure1 = data_dict.get('p1')
         pressure2 = data_dict.get('p2')
         pressure3 = data_dict.get('p3')
         temperature1 = data_dict.get('t1')
         temperature2 = data_dict.get('t2')
-        date = datetime.now().strftime('%Y-%m-%d')
-        time = datetime.now().strftime('%H:%M:%S:%f')[:-3]
-        # print(f"pressure1: {pressure1}, pressure2: {pressure2}, pressure3: {pressure3}, temperature1: {temperature1}, temperature2: {temperature2}")
-        
-        # Perform database operations within the application context
-        with app.app_context():
-            new_record = SensorData(
+
+        new_record = SensorData(
             date=date,
-            time=time, 
+            time=time,
             pressure1=pressure1,
             pressure2=pressure2,
             pressure3=pressure3,
             temperature1=temperature1,
             temperature2=temperature2
-            )
+        )
+
+        with app.app_context():
             db.session.add(new_record)
             db.session.commit()
             # Emit the new data to all connected clients
-            # print("Emitting new data event")
-            # Check if there are any connected clients
-            socketio.emit('new_data', {
-                    'date': date,
-                    'time': time,
-                    'pressure1': pressure1,
-                    'pressure2': pressure2,
-                    'pressure3': pressure3,
-                    'temperature1': temperature1,
-                    'temperature2': temperature2
-                })
-            
-        # Process data message
-    
+            # socketio.emit('new_data', {
+            #     'date': date,
+            #     'time': time,
+            #     'pressure1': pressure1,
+            #     'pressure2': pressure2,
+            #     'pressure3': pressure3,
+            #     'temperature1': temperature1,
+            #     'temperature2': temperature2
+            # })
+
     elif message.startswith("status:"):
         global status
         status = message[7:]
         print("Status message received:", status)
-        # Convert the status string to a dictionary
         status_dict = json.loads(status)
-        # Assign values to variables
-        k1 = status_dict.get('k1')
-        k2 = status_dict.get('k2')
-        k3 = status_dict.get('k3')
-        
-        # Perform database operations within the application context
+
         with app.app_context():
             existing_record = StatusData.query.first()
             if existing_record is None:
-                new_status = StatusData(k1=k1, k2=k2, k3=k3)
+                new_status = StatusData(
+                    k1=status_dict.get('k1'),
+                    k2=status_dict.get('k2'),
+                    k3=status_dict.get('k3')
+                )
                 db.session.add(new_status)
             else:
-                existing_record.k1 = k1
-                existing_record.k2 = k2
-                existing_record.k3 = k3
+                existing_record.k1 = status_dict.get('k1')
+                existing_record.k2 = status_dict.get('k2')
+                existing_record.k3 = status_dict.get('k3')
             db.session.commit()
-        # Process status message
+            # socketio.emit('status', {
+            #     'k1': status_dict.get('k1'),
+            #     'k2': status_dict.get('k2'),
+            #     'k3': status_dict.get('k3')
+            # })
+
     else:
         print("Unknown message type:", message)
-
-
-# Start the serial communication in a separate thread
-# threading.Thread(target=serial_communication, daemon=True).start()
-socketio.start_background_task(serial_communication)
 
 # @app.route('/data', methods=['POST'])
 # def receive_data():
@@ -224,22 +239,21 @@ socketio.start_background_task(serial_communication)
 
 
 @app.route('/visualize', methods=['GET'])
-
 def visualize_data():
-    # records = SensorData.query.order_by(SensorData.id.desc()).limit(1).all()
-    # data = [
-    #     {"date": record.date,
-    #     "time":record.time,
-    #     "pressure1": record.pressure1,
-    #     "pressure2": record.pressure2,
-    #     "pressure3": record.pressure3,
-    #     "temperature1": record.temperature1,
-    #     "temperature2": record.temperature2}
-    #     for record in records
-    # ]
+    records = SensorData.query.order_by(SensorData.id.desc()).all()
+    data = [
+        {"date": record.date,
+        "time":record.time,
+        "pressure1": record.pressure1,
+        "pressure2": record.pressure2,
+        "pressure3": record.pressure3,
+        "temperature1": record.temperature1,
+        "temperature2": record.temperature2}
+        for record in records
+    ]
     # global data
     # return jsonify(data), 200
-    return render_template('visualize.html')
+    return render_template('visualize.html',data=data)
 
 @app.route('/latest_data', methods=['GET'])
 def latest_data():
@@ -258,15 +272,34 @@ def latest_data():
     ]
     return jsonify(data), 200
 
+@app.route('/status', methods=['GET'])
+def get_status():
+    status_record = StatusData.query.first()
+    if status_record:
+        status_data = {
+            'k1': status_record.k1,
+            'k2': status_record.k2,
+            'k3': status_record.k3
+        }
+        return jsonify(status_data), 200
+    return jsonify({"error": "No status available"}), 404
 
 @app.route('/')
 def index():
-    # print(f"message: {latest_message}")
     print("index Status message received:------------------------", status)
     return render_template('index.html')
 
+# @app.route('/node_modules/<path:path>')
+# def serve_node_modules(path):
+#     return send_from_directory('node_modules', path)
 
+# @app.route('/assets/<path:path>')
+# def serve_assets(path):
+#     return send_from_directory('assets', path)
 
 if __name__ == '__main__':
-    # app.run(host='0.0.0.0', port=5000,debug=True)
-    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
+    # Start the serial communication in a separate thread
+    # threading.Thread(target=serial_communication, daemon=True).start()
+    socketio.start_background_task(serial_communication)
+    app.run(host='0.0.0.0', port=5000,debug=True)
+    # socketio.run(app, host='0.0.0.0', port=5000, debug=True)

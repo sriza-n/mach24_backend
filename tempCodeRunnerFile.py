@@ -1,1 +1,0 @@
-data = raw_data.decode('utf-8').rstrip()

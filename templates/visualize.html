@@ -1,180 +1,185 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Data Visualization</title>
-    <link rel="stylesheet" href="static/style.css">
-    <!-- Use CDN for Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <!-- Use CDN for Chart.js Date Adapter -->
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns"></script>
-    <!-- Use CDN for Socket.IO -->
-    <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+    <link rel="stylesheet" href="static\css\style.css" />
+    <!-- Use CDN for ECharts -->
+    <script src="static/lib/echarts.min.js"></script>
+    <!-- <script type="text/javascript" src="static\js\visualize.js"></script> -->
+    <style>
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
+
+        #pressureChart {
+            width: 100%;
+            height: 100%;
+        }
+
+        #controlBtn {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+        }
+    </style>
 </head>
 <body>
-    {# <div class="container">
-        <h1>Data Visualization</h1>
-        <div id="dataContainer"></div>
-        <div class="test slide-in">
-            test content
+    <div class="container">
+        <div class="row justify-content-evenly">
+            <div class="col-4">
+                <div id="pressureChart"></div>
+            </div>
+            <div class="col-4">
+                <div id="pressureChart"></div>
+            </div>
         </div>
-        <button onclick="window.location.href='/'">Back to Home</button>
-    </div> 
-    <div>
-        <div>
-        <canvas id="pressureChart" width="400" height="200"></canvas>
-        </div>
-        <div>
-        <canvas id="pressureChart" width="400" height="200"></canvas>
-        </div>
-    </div>
-    <div>
-        <div>
-        <canvas id="pressureChart" width="400" height="200"></canvas>
-        </div>
-        <div>
-        <canvas id="pressureChart" width="400" height="200"></canvas>
+        <div class="row justify-content-evenly">
+            <div class="col-4">
+                <div id="pressureChart"></div>
+            </div>
+            <div class="col-4">
+                <div id="pressureChart"></div>
+            </div>
         </div>
     </div>
-    #}
-    <canvas id="pressureChart" width="400" height="200"></canvas>
-    <script>
-        document.addEventListener('DOMContentLoaded', (event) => {
-            const ctx = document.getElementById('pressureChart').getContext('2d');
-
-            const data = {
-                labels: [], // Time labels
-                datasets: [{
-                    label: 'Pressure 1',
-                    data: [], // Pressure data
-                    borderColor: 'rgba(75, 192, 192, 1)',
-                    fill: false,
-                    tension: 0.4
-                }
-                ,{
-                    label: 'Pressure 2',
-                    data: [], // Pressure data
-                    borderColor: 'rgb(164, 18, 18)',
-                    fill: false,
-                    tension: 0.4
-                }]
-            };
-
-            const config = {
-                type: 'line',
-                data: data,
-                options: {
-                    responsive: true,
-                    plugins: {
-                        title: {
-                            display: true,
-                            text: 'Real-time Pressure Data'
-                        },
-                    },
-                    interaction: {
-                        intersect: false,
-                    },
-                    scales: {
-                        x: {
-                            type: 'time',
-                            time: {
-                                unit: 'second',
-                                tooltipFormat: 'HH:mm:ss:SSS',
-                                displayFormats: {
-                                    second: 'ss'
-                                }  
-                            },
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Time'
-                            }
-                        },
-                        y: {
-                            display: true,
-                            title: {
-                                display: true,
-                                text: 'Pressure'
-                            },
-                            suggestedMin: 0,
-                            suggestedMax: 100
-                        }
-                    }
-                }
-            };
-
-            const pressureChart = new Chart(ctx, config);
-            {# 
-            const fetchData = () => {
-                fetch('/latest_data')
-                    .then(response => response.json())
-                    .then(data => {
-                        console.log('Data:', data);
-                        if (data.length > 0) {
-                            const latestData = data[0];
-                            const timeString = latestData.time;
-                            const [hours, minutes, seconds, milliseconds] = timeString.split(':').map(Number);
-                            const time = new Date();
-                            time.setHours(hours, minutes, seconds, milliseconds); // Set the time correctly
-
-                            const pressure1 = latestData.pressure1;
-                            const pressure2 = latestData.pressure2;
-                            console.log('time:', time, 'pressure1:', pressure1);
-
-                            // Add new data to the chart
-                            pressureChart.data.labels.push(time);
-                            pressureChart.data.datasets[0].data.push(pressure1);
-                            pressureChart.data.datasets[1].data.push(pressure2);
-                            pressureChart.update();
-                        }
-                    })
-                    .catch(error => console.error('Error fetching data:', error));
-            };
-
-            // Fetch data every 1 second
-            setInterval(fetchData, 1000);#}
-            
-            
-           // Connect to the WebSocket server
-            const socket = io();
-
-            // Confirm WebSocket connection
-            socket.on('connect', () => {
-                console.log('WebSocket connected');
-            });
-
-            // Listen for new data from the server
-            socket.on('new_data', (latestData) => {
-                console.log('New data received:', latestData);
-                const timeString = latestData.time;
-                const [hours, minutes, seconds, milliseconds] = timeString.split(':').map(Number);
-                const time = new Date();
-                time.setHours(hours, minutes, seconds, milliseconds); // Set the time correctly
-
-                const pressure1 = latestData.pressure1;
-                console.log('time:', time, 'pressure1:', pressure1);
-
-                // Add new data to the chart
-                pressureChart.data.labels.push(time);
-                pressureChart.data.datasets[0].data.push(pressure1);
-                pressureChart.update();
-            });
-
-            // Debugging: Log any errors
-            socket.on('connect_error', (error) => {
-                console.error('WebSocket connection error:', error);
-            });
-
-            socket.on('error', (error) => {
-                console.error('WebSocket error:', error);
-            });
-
-            // Debugging: Log all events
-            socket.onAny((event, ...args) => {
-                console.log(`Event received: ${event}`, args);
-            });
-        });
-    </script>
+    
+    
+    <button id="controlBtn">Pause</button>
 </body>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const chartDom = document.getElementById('pressureChart');
+        const myChart = echarts.init(chartDom);
+
+        const option = {
+            animationDuration: 1000,
+            // title: {
+            //     text: 'Pressure Data Visualization'
+            // },
+            legend: {
+                data: ['Pressure 1', 'Pressure 2']
+            },
+            tooltip: {
+                order: 'valueDesc',
+                trigger: 'axis'
+            },
+            xAxis: {
+                type: 'category',
+                name: 'Time (s)',
+                nameLocation: 'middle',
+                data: [] // Time labels
+            },
+            yAxis: {
+                name: 'Pressure'
+            },
+            grid: {
+                right: 140
+            },
+            dataZoom: [
+                // {
+                //     type: 'slider',
+                //     start: 0,
+                //     end: 100
+                // },
+                {
+                    type: 'inside',
+                    start: 0,
+                    end: 100
+                }
+            ],
+            series: [
+                {
+                    name: 'Pressure 1',
+                    type: 'line',
+                    showSymbol: true,
+                    smooth: true,
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    data: [] // Pressure 1 data
+                },
+                {
+                    name: 'Pressure 2',
+                    type: 'line',
+                    showSymbol: true,
+                    smooth: true,
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    data: [] // Pressure 2 data
+                }
+            ]
+        };
+
+        myChart.setOption(option);
+
+        // Plot initial data
+        const initialData = JSON.parse('{{ data | tojson | safe }}');
+        const timeSet = new Set();
+        initialData.forEach(record => {
+            const timeString = record.time;
+            const pressure1 = record.pressure1;
+            const pressure2 = record.pressure2;
+
+            option.xAxis.data.unshift(timeString);
+            option.series[0].data.unshift(pressure1);
+            option.series[1].data.unshift(pressure2);
+            timeSet.add(timeString);
+        });
+
+        myChart.setOption(option);
+
+        let fetchDataInterval;
+        const fetchData = () => {
+            fetch('/latest_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.length > 0) {
+                        const latestData = data[0];
+                        const timeString = latestData.time;
+                        const pressure1 = latestData.pressure1;
+                        const pressure2 = latestData.pressure2;
+                        option.xAxis.data.push(timeString);
+                        option.series[0].data.push(pressure1);
+                        option.series[1].data.push(pressure2);
+
+                        myChart.setOption(option);
+                    }
+                })
+                .catch(error => console.error('Error fetching data:', error));
+        };
+
+        // Fetch data every 1 second
+        fetchDataInterval = setInterval(fetchData, 1000);
+
+        // Resize chart on window resize
+        window.addEventListener('resize', () => {
+            myChart.resize();
+        });
+
+        // Control button to pause/resume fetching data
+        const controlBtn = document.getElementById('controlBtn');
+        let isPaused = false;
+        controlBtn.addEventListener('click', () => {
+            if (isPaused) {
+                fetchDataInterval = setInterval(fetchData, 1000);
+                controlBtn.textContent = 'Pause';
+            } else {
+                clearInterval(fetchDataInterval);
+                controlBtn.textContent = 'Resume';
+            }
+            isPaused = !isPaused;
+        });
+    });
+</script>
+
 </html>

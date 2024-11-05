@@ -1,0 +1,144 @@
+.hero-image {
+    max-width: 100%;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+.hero-image:hover {
+    transform: scale(1.02);
+}
+
+.canvas-container {
+    background: #21558a;
+    padding: 0rem;
+    width: 100%;
+    height: 100vh;  /* Full viewport height */
+    position: relative;
+    display: flex;  /* Add flex display */
+    /* align-items: stretch; */
+}
+
+canvas {
+    width: 100% !important;
+    height: 100% !important;
+    display: block;
+    object-fit: cover; /*Changed from contain to cover */
+    /* flex: 1; Take up all available space */
+    margin: 0; /* Remove any margin */
+}
+
+
+#countdown {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 10px;
+    padding: 1rem 2rem;
+}
+
+
+html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+}
+
+.container-fluid {
+    /* min-height: 100vh; */
+    padding: 2rem;
+}
+
+.hero-image {
+    max-width: 100%;
+    height: auto;
+    transition: transform 0.3s ease;
+}
+
+.main-content {
+    background: white;
+    border-radius: 15px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    padding: 3rem;
+    margin-top: 2rem;
+}
+
+.test {
+    background: #007bff;
+    color: white;
+    padding: 1.5rem;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    font-size: 1.2rem;
+}
+
+#visualizeButton {
+    padding: 1rem 2rem;
+    font-size: 1.25rem;
+    margin-top: 1rem;
+}
+
+.indicator-lights {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.indicator-light {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    display: inline-block;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+    animation: glow 1.5s infinite alternate;
+    transition: background-color 0.3s, box-shadow 0.3s;
+}
+
+.indicator-light.bg-success {
+    background-color: #28a745;
+    box-shadow: 0 0 10px #28a745;
+}
+
+.indicator-light.bg-success:hover {
+    background-color: #ff5733 !important; /* Completely different color */
+    box-shadow: 0 0 10px #ff5733 !important;
+}
+
+.indicator-light.bg-warning {
+    background-color: #ffc107;
+    box-shadow: 0 0 10px #ffc107;
+}
+
+.indicator-light.bg-warning:hover {
+    background-color: #33ff57 !important; /* Completely different color */
+    box-shadow: 0 0 10px #33ff57 !important;
+}
+
+.indicator-light.bg-danger {
+    background-color: #dc3545;
+    box-shadow: 0 0 10px #dc3545;
+}
+
+.indicator-light.bg-danger:hover {
+    background-color: #3357ff !important; /* Completely different color */
+    box-shadow: 0 0 10px #3357ff !important;
+}
+
+@keyframes glow {
+    from {
+        opacity: 0.7;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+/* @media (max-width: 992px) {
+    .canvas-container {
+        order: 2 !important;
+    }
+    .col-lg-9 {
+        order: 1 !important;
+    }
+    .row {
+        flex-direction: column !important;
+    }
+} */
