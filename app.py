@@ -21,7 +21,9 @@ socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=
 @socketio.on('connect')
 def handle_connect():
     print('Client connected')
-    emit('new_data_event', {'pressure1': 47.47, 'pressure2': 93.93, 'pressure3': 47.47})
+    # Emit a test message to confirm connection
+    socketio.emit('connection_test', {'message': 'Connection established'})
+
 
 @socketio.on('disconnect')
 def handle_disconnect():
@@ -91,7 +93,7 @@ def serial_communication():
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             try:
-                ser = serial.Serial(port.device, 115200, timeout=1)
+                ser = serial.Serial(port.device, 9600, timeout=1)
                 print(f"Connected to {port.device}")
                 print(ser)
                 return True
@@ -101,6 +103,7 @@ def serial_communication():
 
     while True:
         if ser is None or not ser.is_open:
+            socketio.emit('new_data', {'message': 'Attempting to connect to serial port'})
             print("Attempting to connect to serial port...")
             if not connect_to_serial():
                 print("Failed to connect to any serial port. Retrying in 5 seconds...")
@@ -110,14 +113,16 @@ def serial_communication():
         try:
             raw_data = ser.readline()
             if raw_data:
-                buffer += raw_data.decode('utf-8', errors='ignore')
-                if '\n' in buffer:  # Assuming messages end with a newline
-                    message, buffer = buffer.split('\n', 1)
-                    latest_message = message.strip()  # Update the global variable
-                    # print(f"message: {latest_message}")
-                    filter_message(latest_message)
-                else:
-                    print("incomplete message:", buffer)
+                # buffer += raw_data.decode('utf-8', errors='ignore')
+                # if '\n' in buffer:  # Assuming messages end with a newline
+                #     message, buffer = buffer.split('\n', 1)
+                #     latest_message = message.strip()  # Update the global variable
+                #     # print(f"message: {latest_message}")
+                #     filter_message(latest_message)
+                # else:
+                #     print("incomplete message:", buffer)
+                message = raw_data.decode('utf-8').strip()
+                filter_message(message)
         except UnicodeDecodeError:
             print(f"Failed to decode: {raw_data}")
         except serial.SerialException as e:
@@ -128,8 +133,6 @@ def serial_communication():
             close_serial()
             # break
 
-# Start the serial communication in a separate thread
-threading.Thread(target=serial_communication, daemon=True).start()
 
 def filter_message(message):
 
@@ -147,7 +150,7 @@ def filter_message(message):
         temperature2 = data_dict.get('t2')
         date = datetime.now().strftime('%Y-%m-%d')
         time = datetime.now().strftime('%H:%M:%S:%f')[:-3]
-        print(f"pressure1: {pressure1}, pressure2: {pressure2}, pressure3: {pressure3}, temperature1: {temperature1}, temperature2: {temperature2}")
+        # print(f"pressure1: {pressure1}, pressure2: {pressure2}, pressure3: {pressure3}, temperature1: {temperature1}, temperature2: {temperature2}")
         
         # Perform database operations within the application context
         with app.app_context():
@@ -164,16 +167,17 @@ def filter_message(message):
             db.session.commit()
             # Emit the new data to all connected clients
             # print("Emitting new data event")
-            # socketio.emit('new_data', {
-            #     'date': date,
-            #     'time': time,
-            #     'pressure1': pressure1,
-            #     'pressure2': pressure2,
-            #     'pressure3': pressure3,
-            #     'temperature1': temperature1,
-            #     'temperature2': temperature2
-            # })
-            # print("New data event emitted")
+            # Check if there are any connected clients
+            socketio.emit('new_data', {
+                    'date': date,
+                    'time': time,
+                    'pressure1': pressure1,
+                    'pressure2': pressure2,
+                    'pressure3': pressure3,
+                    'temperature1': temperature1,
+                    'temperature2': temperature2
+                })
+            
         # Process data message
     
     elif message.startswith("status:"):
@@ -201,6 +205,11 @@ def filter_message(message):
         # Process status message
     else:
         print("Unknown message type:", message)
+
+
+# Start the serial communication in a separate thread
+# threading.Thread(target=serial_communication, daemon=True).start()
+socketio.start_background_task(serial_communication)
 
 # @app.route('/data', methods=['POST'])
 # def receive_data():

@@ -20,8 +20,25 @@
             test content
         </div>
         <button onclick="window.location.href='/'">Back to Home</button>
-    </div> #}
-    <canvas id="pressureChart" width="200" height="100"></canvas>
+    </div> 
+    <div>
+        <div>
+        <canvas id="pressureChart" width="400" height="200"></canvas>
+        </div>
+        <div>
+        <canvas id="pressureChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+    <div>
+        <div>
+        <canvas id="pressureChart" width="400" height="200"></canvas>
+        </div>
+        <div>
+        <canvas id="pressureChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+    #}
+    <canvas id="pressureChart" width="400" height="200"></canvas>
     <script>
         document.addEventListener('DOMContentLoaded', (event) => {
             const ctx = document.getElementById('pressureChart').getContext('2d');
@@ -32,6 +49,13 @@
                     label: 'Pressure 1',
                     data: [], // Pressure data
                     borderColor: 'rgba(75, 192, 192, 1)',
+                    fill: false,
+                    tension: 0.4
+                }
+                ,{
+                    label: 'Pressure 2',
+                    data: [], // Pressure data
+                    borderColor: 'rgb(164, 18, 18)',
                     fill: false,
                     tension: 0.4
                 }]
@@ -81,7 +105,7 @@
             };
 
             const pressureChart = new Chart(ctx, config);
-            
+            {# 
             const fetchData = () => {
                 fetch('/latest_data')
                     .then(response => response.json())
@@ -95,11 +119,13 @@
                             time.setHours(hours, minutes, seconds, milliseconds); // Set the time correctly
 
                             const pressure1 = latestData.pressure1;
+                            const pressure2 = latestData.pressure2;
                             console.log('time:', time, 'pressure1:', pressure1);
 
                             // Add new data to the chart
                             pressureChart.data.labels.push(time);
                             pressureChart.data.datasets[0].data.push(pressure1);
+                            pressureChart.data.datasets[1].data.push(pressure2);
                             pressureChart.update();
                         }
                     })
@@ -107,10 +133,10 @@
             };
 
             // Fetch data every 1 second
-            setInterval(fetchData, 1000);
+            setInterval(fetchData, 1000);#}
             
             
-            {#// Connect to the WebSocket server
+           // Connect to the WebSocket server
             const socket = io();
 
             // Confirm WebSocket connection
@@ -147,7 +173,7 @@
             // Debugging: Log all events
             socket.onAny((event, ...args) => {
                 console.log(`Event received: ${event}`, args);
-            });#}
+            });
         });
     </script>
 </body>
