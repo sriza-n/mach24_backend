@@ -13,8 +13,34 @@
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 
-<body class="bg-light ">
-    <div class="container">
+<body class="bg-light">
+    <div class="container-fluid">
+        <div class="row justify-content-evenly" >
+            <div class="col-lg-9" style="border: 2px solid rgb(0, 0, 0);">
+                <div class="row justify-content-center">
+                    <img src="static/assets/mach24.png" alt="Mach24 Orbitals" class="hero-image img-fluid mb-lg-10"
+                        style=" object-fit: contain;">
+                </div>
+                <div class="row justify-content-evenly">
+                    <img class="col-2 img-fluid" id="ready" onclick="changeImage('ready')" src="static\assets\off.png">
+                    <img class="col-2 img-fluid" id="clear" onclick="changeImage('clear')" src="static\assets\off.png">
+                    <img class="col-2 img-fluid" id="fly" onclick="changeImage('fly')" src="static\assets\off.png">
+                </div>
+                <div class="row justify-content-evenly text-center" >
+                    <div class="col-lg-4" >First phase</div>
+                    <div class="col-lg-4" >Second phase</div>
+                    <div class="col-lg-4" >Third phase</div>
+                </div>
+            </div>
+
+            <div class="col-lg-3" style="border: 2px solid rgb(0, 0, 0);">
+                <div class="row justify-content-center canvas-container">
+                    <canvas class="col-lg" id="canvas" height="100vh" style="border: 2px solid rgb(0, 0, 0);"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- <div class="container">
         <div class="row align-items-center min-vh-100 flex-column-reverse flex-lg-row d-flex">
             <div class="col-lg-9 order-2 order-lg-1" style="border: 2px solid red;">
                 <div class="text-center">
@@ -25,9 +51,9 @@
                     <img class="col-2 img-fluid" id="clear" onclick="changeImage('clear')" src="static\assets\off.png">
                     <img class="col-2 img-fluid" id="fly" onclick="changeImage('fly')" src="static\assets\off.png">
                 </div>
-                <div class="main-content">
-                    <!-- <h1 class="display-3 mb-4">Welcome to the Blank</h1> -->
-                    <div class="test" id="testElement">
+                <div class="main-content"> -->
+    <!-- <h1 class="display-3 mb-4">Welcome to the Blank</h1> -->
+    <!-- <div class="test" id="testElement">
                         <h2 class="h4 mb-0">Test content</h2>
                     </div>
                     <button id="visualizeButton" class="btn btn-primary btn-lg">
@@ -36,12 +62,16 @@
                     <div id="countdown" class="position-fixed top-50 start-50 translate-middle" style="display: none;">
                         Redirecting in <span id="countdownTimer" class="fw-bold">3</span> seconds...
                     </div>
+                    <button id="triggerFly" class="btn btn-primary position-absolute top-0 end-0 m-3">
+                    Fly
+                    </button>
                 </div>
             </div>
-            <div class="col-lg-3 canvas-container order-1 order-lg-2" style="border: 2px solid blue;">
+            <div class="col-lg-3 canvas-container order-1 order-lg-2">
                 <canvas id="canvas" width="652" height="1000"></canvas>
             </div>
         </div>
-    </div>
+    </div> -->
 </body>
+
 </html>

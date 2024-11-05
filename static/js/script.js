@@ -2,6 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', (event) => {
     const visualizeButton = document.getElementById('visualizeButton');
+
+    let countdownInterval; // Countdown interval
     if (visualizeButton) {
         visualizeButton.addEventListener('click', function () {
             const testElement = document.getElementById('testElement');
@@ -34,6 +36,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
         });
     }
 
+
+
+
+    let flyTrigger; // Rive fly trigger
     window.rive.RuntimeLoader.setWasmUrl('/static/lib/rive.wasm');
 
     try {
@@ -44,11 +50,25 @@ document.addEventListener('DOMContentLoaded', (event) => {
             stateMachines: "State Machine 1",
             onLoad: () => {
                 r.resizeDrawingSurfaceToCanvas();
+                const inputs = r.stateMachineInputs('State Machine 1');
+                flyTrigger = inputs.find(i => i.name === 'fly'); // Assign flyTrigger here
             },
             onLoadError: (err) => {
                 console.error('Rive load error:', err);
             }
         });
+
+        //trigger button event listener
+        const triggerButton = document.getElementById('triggerFly');
+        if (triggerButton) {
+            triggerButton.addEventListener('click', () => {
+                if (flyTrigger) {
+                    flyTrigger.fire();
+                } else {
+                    console.error('flyTrigger is not defined');
+                }
+            });
+        }
     } catch (err) {
         console.error('Rive initialization error:', err);
     }
@@ -97,7 +117,21 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
             // Check if all values are 1 and redirect
             if (data.k1 === 1 && data.k2 === 1 && data.k3 === 1) {
-                window.location.href = '/visualize';
+                if (flyTrigger) {
+                    flyTrigger.fire();
+                }
+                let countdown = 3;
+                countdownInterval = setInterval(() => {
+                    countdown -= 1;
+                    if (countdownTimer) {
+                        countdownTimer.textContent = countdown;
+                    }
+    
+                    if (countdown <= 0) {
+                        clearInterval(countdownInterval);
+                        window.location.href = '/visualize';
+                    }
+                }, 1000);;
             }
         })
         .catch(error => {
