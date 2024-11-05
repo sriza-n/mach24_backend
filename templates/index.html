@@ -15,27 +15,53 @@
 
 <body class="bg-light">
     <div class="container-fluid">
-        <div class="row justify-content-evenly" >
-            <div class="col-lg-9" style="border: 2px solid rgb(0, 0, 0);">
+        <div class="row justify-content-evenly">
+            <div class="col-lg-9" >
                 <div class="row justify-content-center">
-                    <img src="static/assets/mach24.png" alt="Mach24 Orbitals" class="hero-image img-fluid mb-lg-10"
-                        style=" object-fit: contain;">
+                    <img src="static/assets/mach24.png" alt="Mach24 Orbitals" class="hero-image img-fluid mb-lg-20"
+                        style=" object-fit: contain; padding-bottom: 15px;">
                 </div>
-                <div class="row justify-content-evenly">
+                <!-- <div class="row justify-content-evenly">
                     <img class="col-2 img-fluid" id="ready" onclick="changeImage('ready')" src="static\assets\off.png">
                     <img class="col-2 img-fluid" id="clear" onclick="changeImage('clear')" src="static\assets\off.png">
                     <img class="col-2 img-fluid" id="fly" onclick="changeImage('fly')" src="static\assets\off.png">
+                </div> -->
+                <div class="row justify-content-evenly text-center">
+                    <div class="col-lg-4" style="border-right: 2px solid rgb(0, 0, 0); border-left: 2px solid rgb(0, 0, 0);">
+                        <div class="row justify-content-center">
+                            <img alt="ready" class="col-3 col-lg-6 " id="ready" src="static\assets\off.png">
+                        </div>
+                        <div class="row" style="text-align: left; display: block;">
+                            <h2>First phase</h2>
+                            <span id="dataK1Value"></span>
+                        </div>
+                    </div>
+                    <div class="col-lg-4" style="border-right: 2px solid rgb(0, 0, 0); border-left: 2px solid rgb(0, 0, 0);">
+                        <div class="row justify-content-center">
+                            <img alt="clear" class="col-3 col-lg-6 " id="clear" src="static\assets\off.png"> 
+                        </div>
+                        <div class="row" style="text-align: left; display: block;">
+                            <h3>Second phase</h3>
+                        </div>
+                    </div>
+                    <div class="col-lg-4" style="border-right: 2px solid rgb(0, 0, 0); border-left: 2px solid rgb(0, 0, 0);">
+                        <div class="row justify-content-center">
+                            <img alt="fly" class="col-3 col-lg-6 " id="fly" src="static\assets\off.png">
+                            
+                        </div>
+                        <div class="row" style="text-align: left; display: block;">
+                            <h3>Third phase</h3>
+                        </div>
+                    </div>
                 </div>
-                <div class="row justify-content-evenly text-center" >
-                    <div class="col-lg-4" >First phase</div>
-                    <div class="col-lg-4" >Second phase</div>
-                    <div class="col-lg-4" >Third phase</div>
+                <div id="countdown" class="position-fixed top-50 start-50 translate-middle" style="display: none;">
+                    Redirecting in <span id="countdownTimer" class="fw-bold">3</span> seconds...
                 </div>
             </div>
 
-            <div class="col-lg-3" style="border: 2px solid rgb(0, 0, 0);">
+            <div class="col-lg-3">
                 <div class="row justify-content-center canvas-container">
-                    <canvas class="col-lg" id="canvas" height="100vh" style="border: 2px solid rgb(0, 0, 0);"></canvas>
+                    <canvas class="col-lg" id="canvas"></canvas>
                 </div>
             </div>
         </div>

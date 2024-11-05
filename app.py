@@ -77,6 +77,27 @@ class StatusData(db.Model):
     k1 = db.Column(db.Integer, nullable=False)
     k2 = db.Column(db.Integer, nullable=False)
     k3 = db.Column(db.Integer, nullable=False)
+
+
+class SensorData0(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(20), nullable=False)
+    time = db.Column(db.String(20), nullable=False)
+    pressure1 = db.Column(db.Float, nullable=False)
+    pressure2 = db.Column(db.Float, nullable=False)
+    pressure3 = db.Column(db.Float, nullable=False)
+    temperature1 = db.Column(db.Float, nullable=False)
+    temperature2 = db.Column(db.Float, nullable=False)
+
+class SensorData1(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    date = db.Column(db.String(20), nullable=False)
+    time = db.Column(db.String(20), nullable=False)
+    pressure1 = db.Column(db.Float, nullable=False)
+    pressure2 = db.Column(db.Float, nullable=False)
+    pressure3 = db.Column(db.Float, nullable=False)
+    temperature1 = db.Column(db.Float, nullable=False)
+    temperature2 = db.Column(db.Float, nullable=False)
 # Create the database and the table
 with app.app_context():
     db.create_all()
@@ -156,36 +177,45 @@ def serial_communication():
             # break
 
 
+date1 = None
+time1 = None
+pressure1 = None
+pressure2 = None
+pressure3 = None
+temperature1 = None
+temperature2 = None
+status_all_one_flag = False
+
 def filter_message(message):
     if message.startswith("data:"):
-        global data
+        global data, date1, time1, pressure1, pressure2, pressure3, temperature1, temperature2, status_all_one_flag
         data = message[5:]
         print("Data message received:", data)
         # Convert the data string to a dictionary
         data_dict = json.loads(data)
         # Assign values to variables
         date_time = datetime.now()
-        date = date_time.strftime('%Y-%m-%d')
-        time = date_time.strftime('%H:%M:%S:%f')[:-3]
+        date1 = date_time.strftime('%Y-%m-%d')
+        time1 = date_time.strftime('%H:%M:%S:%f')[:-3]
         pressure1 = data_dict.get('p1')
         pressure2 = data_dict.get('p2')
         pressure3 = data_dict.get('p3')
         temperature1 = data_dict.get('t1')
         temperature2 = data_dict.get('t2')
 
-        new_record = SensorData(
-            date=date,
-            time=time,
-            pressure1=pressure1,
-            pressure2=pressure2,
-            pressure3=pressure3,
-            temperature1=temperature1,
-            temperature2=temperature2
-        )
+        # new_record = SensorData0(
+        #     date=date1,
+        #     time=time1,
+        #     pressure1=pressure1,
+        #     pressure2=pressure2,
+        #     pressure3=pressure3,
+        #     temperature1=temperature1,
+        #     temperature2=temperature2
+        # )
 
-        with app.app_context():
-            db.session.add(new_record)
-            db.session.commit()
+        # with app.app_context():
+        #     db.session.add(new_record)
+        #     db.session.commit()
             # Emit the new data to all connected clients
             # socketio.emit('new_data', {
             #     'date': date,
@@ -198,7 +228,6 @@ def filter_message(message):
             # })
 
     elif message.startswith("status:"):
-        global status
         status = message[7:]
         print("Status message received:", status)
         status_dict = json.loads(status)
@@ -222,6 +251,48 @@ def filter_message(message):
             #     'k2': status_dict.get('k2'),
             #     'k3': status_dict.get('k3')
             # })
+        # Check if all status values are 1 and store in SensorData
+            # if status_dict.get('k1') == 1 and status_dict.get('k2') == 1 and status_dict.get('k3') == 1:
+            #     status_all_one_flag = True
+
+            
+            if status_dict.get('k1') == 1 and status_dict.get('k2') == 1 and status_dict.get('k3') == 1:
+                new_record = SensorData(
+                    date=date1,
+                    time=time1,
+                    pressure1=pressure1,
+                    pressure2=pressure2,
+                    pressure3=pressure3,
+                    temperature1=temperature1,
+                    temperature2=temperature2
+                )
+                db.session.add(new_record)
+                db.session.commit()
+
+            elif status_dict.get('k1') == 1 and status_dict.get('k2') == 1:
+                new_record = SensorData1(
+                    date=date1,
+                    time=time1,
+                    pressure1=pressure1,
+                    pressure2=pressure2,
+                    pressure3=pressure3,
+                    temperature1=temperature1,
+                    temperature2=temperature2
+                )
+                db.session.add(new_record)
+                db.session.commit()
+            else:
+                new_record = SensorData0(
+                    date=date1,
+                    time=time1,
+                    pressure1=pressure1,
+                    pressure2=pressure2,
+                    pressure3=pressure3,
+                    temperature1=temperature1,
+                    temperature2=temperature2
+                )
+                db.session.add(new_record)
+                db.session.commit()
 
     else:
         print("Unknown message type:", message)

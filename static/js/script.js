@@ -109,6 +109,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
             // document.getElementById('statusK1').textContent = data.k1;
             // document.getElementById('statusK2').textContent = data.k2;
             // document.getElementById('statusK3').textContent = data.k3;
+            document.getElementById('dataK1Value').textContent = data.k1; // Set data.k1 value
 
             // Update images based on data values
             updateImage('ready', data.k1);
