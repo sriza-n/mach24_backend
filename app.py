@@ -64,11 +64,12 @@ class SensorData(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(20), nullable=False)
+    teensytime = db.Column(db.String(20), nullable=False)
     pressure1 = db.Column(db.Float, nullable=False)
     pressure2 = db.Column(db.Float, nullable=False)
     pressure3 = db.Column(db.Float, nullable=False)
     temperature1 = db.Column(db.Float, nullable=False)
-    temperature2 = db.Column(db.Float, nullable=False)
+    loadcell = db.Column(db.Float, nullable=False)
     # t3 = db.Column(db.Float, nullable=False)
     # t4 = db.Column(db.Float, nullable=False)
 # Define the StatusData model
@@ -77,27 +78,31 @@ class StatusData(db.Model):
     k1 = db.Column(db.Integer, nullable=False)
     k2 = db.Column(db.Integer, nullable=False)
     k3 = db.Column(db.Integer, nullable=False)
+    st = db.Column(db.String(20), nullable=False)
 
 
 class SensorData0(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(20), nullable=False)
+    teensytime = db.Column(db.String(20), nullable=False)
     pressure1 = db.Column(db.Float, nullable=False)
     pressure2 = db.Column(db.Float, nullable=False)
     pressure3 = db.Column(db.Float, nullable=False)
     temperature1 = db.Column(db.Float, nullable=False)
-    temperature2 = db.Column(db.Float, nullable=False)
+    loadcell = db.Column(db.Float, nullable=False)
 
 class SensorData1(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     date = db.Column(db.String(20), nullable=False)
     time = db.Column(db.String(20), nullable=False)
+    teensytime = db.Column(db.String(20), nullable=False)
     pressure1 = db.Column(db.Float, nullable=False)
     pressure2 = db.Column(db.Float, nullable=False)
     pressure3 = db.Column(db.Float, nullable=False)
     temperature1 = db.Column(db.Float, nullable=False)
-    temperature2 = db.Column(db.Float, nullable=False)
+    loadcell = db.Column(db.Float, nullable=False)
+
 # Create the database and the table
 with app.app_context():
     db.create_all()
@@ -133,7 +138,7 @@ def serial_communication():
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             try:
-                ser = serial.Serial(port.device, 115200)
+                ser = serial.Serial(port.device, 9600)
                 print(f"Connected to {port.device}")
                 print(ser)
                 return True
@@ -179,17 +184,18 @@ def serial_communication():
 
 date1 = None
 time1 = None
+teensytime = None
 pressure1 = None
 pressure2 = None
 pressure3 = None
 temperature1 = None
-temperature2 = None
+loadcell = None
 status_all_one_flag = False
 
 def filter_message(message):
-    if message.startswith("data:"):
+    if message.startswith("D:"):
         global data, date1, time1, pressure1, pressure2, pressure3, temperature1, temperature2, status_all_one_flag
-        data = message[5:]
+        data = message[2:]
         print("Data message received:", data)
         # Convert the data string to a dictionary
         data_dict = json.loads(data)
@@ -197,11 +203,12 @@ def filter_message(message):
         date_time = datetime.now()
         date1 = date_time.strftime('%Y-%m-%d')
         time1 = date_time.strftime('%H:%M:%S:%f')[:-3]
+        teensytime = data_dict.get('T')
         pressure1 = data_dict.get('p1')
         pressure2 = data_dict.get('p2')
         pressure3 = data_dict.get('p3')
-        temperature1 = data_dict.get('t1')
-        temperature2 = data_dict.get('t2')
+        temperature1 = data_dict.get('T1')
+        temperature2 = data_dict.get('LC')
 
         # new_record = SensorData0(
         #     date=date1,
@@ -227,8 +234,8 @@ def filter_message(message):
             #     'temperature2': temperature2
             # })
 
-    elif message.startswith("status:"):
-        status = message[7:]
+    elif message.startswith("S:"):
+        status = message[2:]
         print("Status message received:", status)
         status_dict = json.loads(status)
 
@@ -238,13 +245,16 @@ def filter_message(message):
                 new_status = StatusData(
                     k1=status_dict.get('k1'),
                     k2=status_dict.get('k2'),
-                    k3=status_dict.get('k3')
+                    k3=status_dict.get('k3'),
+                    st=status_dict.get('St')
+
                 )
                 db.session.add(new_status)
             else:
                 existing_record.k1 = status_dict.get('k1')
                 existing_record.k2 = status_dict.get('k2')
                 existing_record.k3 = status_dict.get('k3')
+                existing_record.st = status_dict.get('St')
             db.session.commit()
             # socketio.emit('status', {
             #     'k1': status_dict.get('k1'),
@@ -260,11 +270,12 @@ def filter_message(message):
                 new_record = SensorData(
                     date=date1,
                     time=time1,
+                    teensytime=teensytime,
                     pressure1=pressure1,
                     pressure2=pressure2,
                     pressure3=pressure3,
                     temperature1=temperature1,
-                    temperature2=temperature2
+                    loadcell=loadcell
                 )
                 db.session.add(new_record)
                 db.session.commit()
@@ -273,11 +284,12 @@ def filter_message(message):
                 new_record = SensorData1(
                     date=date1,
                     time=time1,
+                    teensytime=teensytime,
                     pressure1=pressure1,
                     pressure2=pressure2,
                     pressure3=pressure3,
                     temperature1=temperature1,
-                    temperature2=temperature2
+                    loadcell=loadcell
                 )
                 db.session.add(new_record)
                 db.session.commit()
@@ -285,11 +297,12 @@ def filter_message(message):
                 new_record = SensorData0(
                     date=date1,
                     time=time1,
+                    teensytime=teensytime,
                     pressure1=pressure1,
                     pressure2=pressure2,
                     pressure3=pressure3,
                     temperature1=temperature1,
-                    temperature2=temperature2
+                    loadcell=loadcell
                 )
                 db.session.add(new_record)
                 db.session.commit()
