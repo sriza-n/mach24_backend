@@ -38,16 +38,16 @@ socketio = SocketIO(app, cors_allowed_origins="*", logger=True, engineio_logger=
 #         return f"File not found: {filename}", 404
     
 
-@socketio.on('connect')
-def handle_connect():
-    print('Client connected')
-    # Emit a test message to confirm connection
-    socketio.emit('connection_test', {'message': 'Connection established'})
+# @socketio.on('connect')
+# def handle_connect():
+#     print('Client connected')
+#     # Emit a test message to confirm connection
+#     socketio.emit('connection_test', {'message': 'Connection established'})
 
 
-@socketio.on('disconnect')
-def handle_disconnect():
-    print('Client disconnected')
+# @socketio.on('disconnect')
+# def handle_disconnect():
+#     print('Client disconnected')
 
 
 # Store data in a global variable
@@ -138,7 +138,7 @@ def serial_communication():
         ports = list(serial.tools.list_ports.comports())
         for port in ports:
             try:
-                ser = serial.Serial(port.device, 9600)
+                ser = serial.Serial(port.device, 115200)
                 print(f"Connected to {port.device}")
                 print(ser)
                 return True
@@ -194,7 +194,7 @@ status_all_one_flag = False
 
 def filter_message(message):
     if message.startswith("D:"):
-        global data, date1, time1, pressure1, pressure2, pressure3, temperature1, temperature2, status_all_one_flag
+        global data, date1, time1,teensytime, pressure1, pressure2, pressure3, temperature1, loadcell, status_all_one_flag
         data = message[2:]
         print("Data message received:", data)
         # Convert the data string to a dictionary
@@ -208,16 +208,23 @@ def filter_message(message):
         pressure2 = data_dict.get('p2')
         pressure3 = data_dict.get('p3')
         temperature1 = data_dict.get('T1')
-        temperature2 = data_dict.get('LC')
+        loadcell = data_dict.get('LC')
 
+        # print("teensytime:", teensytime)
+        # print("pressure1:", pressure1)
+        # print("pressure2:", pressure2)
+        # print("pressure3:", pressure3)
+        # print("temperature1:", temperature1)
+        # print("loadcell:", loadcell)
         # new_record = SensorData0(
         #     date=date1,
         #     time=time1,
+        #     teensytime=teensytime,
         #     pressure1=pressure1,
         #     pressure2=pressure2,
         #     pressure3=pressure3,
         #     temperature1=temperature1,
-        #     temperature2=temperature2
+        #     loadcell=loadcell
         # )
 
         # with app.app_context():
@@ -266,46 +273,42 @@ def filter_message(message):
             #     status_all_one_flag = True
 
             
-            if status_dict.get('k1') == 1 and status_dict.get('k2') == 1 and status_dict.get('k3') == 1:
+            if all(status_dict.get(k) == 1 for k in ('k1', 'k2', 'k3')):
                 new_record = SensorData(
-                    date=date1,
-                    time=time1,
-                    teensytime=teensytime,
-                    pressure1=pressure1,
-                    pressure2=pressure2,
-                    pressure3=pressure3,
-                    temperature1=temperature1,
-                    loadcell=loadcell
-                )
-                db.session.add(new_record)
-                db.session.commit()
-
-            elif status_dict.get('k1') == 1 and status_dict.get('k2') == 1:
+                date=date1,
+                time=time1,
+                teensytime=teensytime,
+                pressure1=pressure1,
+                pressure2=pressure2,
+                pressure3=pressure3,
+                temperature1=temperature1,
+                loadcell=loadcell
+            )
+            elif all(status_dict.get(k) == 1 for k in ('k1', 'k2')):
                 new_record = SensorData1(
-                    date=date1,
-                    time=time1,
-                    teensytime=teensytime,
-                    pressure1=pressure1,
-                    pressure2=pressure2,
-                    pressure3=pressure3,
-                    temperature1=temperature1,
-                    loadcell=loadcell
+                date=date1,
+                time=time1,
+                teensytime=teensytime,
+                pressure1=pressure1,
+                pressure2=pressure2,
+                pressure3=pressure3,
+                temperature1=temperature1,
+                loadcell=loadcell
                 )
-                db.session.add(new_record)
-                db.session.commit()
             else:
                 new_record = SensorData0(
-                    date=date1,
-                    time=time1,
-                    teensytime=teensytime,
-                    pressure1=pressure1,
-                    pressure2=pressure2,
-                    pressure3=pressure3,
-                    temperature1=temperature1,
-                    loadcell=loadcell
-                )
-                db.session.add(new_record)
-                db.session.commit()
+                date=date1,
+                time=time1,
+                teensytime=teensytime,
+                pressure1=pressure1,
+                pressure2=pressure2,
+                pressure3=pressure3,
+                temperature1=temperature1,
+                loadcell=loadcell 
+            )
+
+            db.session.add(new_record)
+            db.session.commit()
 
     else:
         print("Unknown message type:", message)
