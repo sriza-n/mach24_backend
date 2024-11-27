@@ -43,7 +43,8 @@
         #temperature,
         #stress {
             width: 100%;
-            height: 357px;
+            /* height: 357px; */
+            height: 450px;
             position: relative;
             left: 'center';
             top: 'middle';
@@ -55,6 +56,22 @@
             right: 10px;
             z-index: 1000;
         } */
+        img {
+            overflow-clip-margin: content-box;
+            overflow: clip;
+        }
+        img[style] {
+            width: 100%;
+            aspect-ratio: auto 559 / 314;
+            height: 450px;
+        }
+        /* element.style {
+        display: block;
+        user-select: none;
+        -webkit-user-select: none;
+        margin: auto;
+        background-color: hsl(0, 0%, 25%); */
+        /* } */
     </style>
 </head>
 
@@ -79,7 +96,8 @@
             </div>
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
                 <div id="stress">  
-                <iframe src="http://192.168.1.113:8080/video" height="100%"width="100%" allowfullscreen></iframe>  
+                <!-- <iframe src="http://192.168.1.113:8080/video" height="100%"width="100%" allowfullscreen></iframe>   -->
+                <img class="responsive-video" style="display: block;user-select: none;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://192.168.1.113:8080/video">
                 </div>
             </div>
         </div>
@@ -123,7 +141,7 @@
                 data: [] // Time labels
             },
             yAxis: {
-                name: 'Pressure'
+                name: 'Pressure (psi)'
             },
             grid: {
                 left: '5%',
@@ -167,6 +185,7 @@
             ]
         };
 
+        // loadcell
         const loadChart = echarts.init(chartDom2);
 
         const loadoption = {
@@ -175,7 +194,7 @@
             //     text: 'Pressure Data Visualization'
             // },
             legend: {
-                data: ['Pressure 1', 'Pressure 2']
+                data: ['loadcell']
             },
             tooltip: {
                 order: 'valueDesc',
@@ -196,7 +215,7 @@
                 data: [] // Time labels
             },
             yAxis: {
-                name: 'Pressure'
+                name: 'loadcell (N)'
             },
             grid: {
                 left: '5%',
@@ -236,7 +255,7 @@
         const tempOption = {
             animationDuration: 1000,
             legend: {
-                data: ['Temperature 1', 'Temperature 2']
+                data: ['Temperature 1']
             },
             tooltip: {
                 order: 'valueDesc',
@@ -273,16 +292,16 @@
                     },
                     data: [] // Temperature 1 data
                 },
-                {
-                    name: 'Temperature 2',
-                    type: 'line',
-                    showSymbol: true,
-                    smooth: true,
-                    emphasis: {
-                        focus: 'series'
-                    },
-                    data: [] // Temperature 2 data
-                }
+                // {
+                //     name: 'Temperature 2',
+                //     type: 'line',
+                //     showSymbol: true,
+                //     smooth: true,
+                //     emphasis: {
+                //         focus: 'series'
+                //     },
+                //     data: [] // Temperature 2 data
+                // }
             ]
         };
 
@@ -298,7 +317,7 @@
             const pressure1 = record.pressure1;
             const pressure2 = record.pressure2;
             const temperature1 = record.temperature1;
-            const temperature2 = record.temperature2;
+            const loadChart = record.loadcell;
 
             option.xAxis.data.unshift(timeString);
             option.series[0].data.unshift(pressure1);
@@ -307,11 +326,15 @@
             //for temp
             tempOption.xAxis.data.unshift(timeString);
             tempOption.series[0].data.unshift(temperature1);
-            tempOption.series[1].data.unshift(temperature2);
+
+            //for loadcell
+            loadoption.xAxis.data.unshift(timeString);
+            loadoption.series[0].data.unshift(loadChart);
             timeSet.add(timeString);
         });
 
         myChart.setOption(option);
+        loadChart.setOption(loadoption);
         tempChart.setOption(tempOption);
 
         let fetchDataInterval;

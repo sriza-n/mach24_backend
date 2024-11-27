@@ -327,7 +327,7 @@ def filter_message(message):
 
 @app.route('/visualize', methods=['GET'])
 def visualize_data():
-    records = SensorData.query.order_by(SensorData.id.desc()).all()
+    records = SensorData0.query.order_by(SensorData0.id.desc()).all()
     data = [
         {"date": record.date,
         "time":record.time,
@@ -335,7 +335,7 @@ def visualize_data():
         "pressure2": record.pressure2,
         "pressure3": record.pressure3,
         "temperature1": record.temperature1,
-        "temperature2": record.loadcell}
+        "loadcell": record.loadcell}
         for record in records
     ]
     # global data
@@ -344,7 +344,7 @@ def visualize_data():
 
 @app.route('/latest_data', methods=['GET'])
 def latest_data():
-    records = SensorData.query.order_by(SensorData.id.desc()).limit(1).all()
+    records = SensorData0.query.order_by(SensorData0.id.desc()).limit(1).all()
     data = [
         {
             "date": record.date,
@@ -353,7 +353,7 @@ def latest_data():
             "pressure2": record.pressure2,
             "pressure3": record.pressure3,
             "temperature1": record.temperature1,
-            "temperature2": record.loadcell
+            "loadcell": record.loadcell
         }
         for record in records
     ]
