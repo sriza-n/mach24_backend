@@ -335,7 +335,7 @@ def visualize_data():
         "pressure2": record.pressure2,
         "pressure3": record.pressure3,
         "temperature1": record.temperature1,
-        "temperature2": record.temperature2}
+        "temperature2": record.loadcell}
         for record in records
     ]
     # global data
@@ -353,7 +353,7 @@ def latest_data():
             "pressure2": record.pressure2,
             "pressure3": record.pressure3,
             "temperature1": record.temperature1,
-            "temperature2": record.temperature2
+            "temperature2": record.loadcell
         }
         for record in records
     ]

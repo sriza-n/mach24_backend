@@ -49,12 +49,12 @@
             top: 'middle';
         }
 
-        #controlBtn {
+        /* #controlBtn {
             position: absolute;
             top: 10px;
             right: 10px;
             z-index: 1000;
-        }
+        } */
     </style>
 </head>
 
@@ -63,7 +63,7 @@
     <div class="container-fluid">
         <div class="row justify-content-center">
             <img src="static/assets/mach24.png" alt="Mach24 Orbitals" class="hero-image img-fluid mb-lg-0"
-                style="height: 50px; width: auto; object-fit: contain;">
+                style="height: 50px; width: auto; object-fit: contain;" id="controlBtn">
         </div>
         <div class="row justify-content-evenly">
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
@@ -78,19 +78,20 @@
                 <div id="temperature"></div>
             </div>
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
-                <div id="stress"></div>
+                <div id="stress">  
+                <iframe src="http://192.168.1.113:8080/video" height="100%"width="100%" allowfullscreen></iframe>  
+                </div>
             </div>
         </div>
     </div>
     <!-- <div id="pressureChart" ></div> -->
-    <button id="controlBtn">Pause</button>
+    <!-- <button id="controlBtn">Pause</button> -->
 </body>
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
         const chartDom1 = document.getElementById('pressureChart');
         const chartDom2 = document.getElementById('newton');
         const chartDom3 = document.getElementById('temperature');
-        const chartDom4 = document.getElementById('stress');
 
 
         const myChart = echarts.init(chartDom1);
@@ -166,6 +167,69 @@
             ]
         };
 
+        const loadChart = echarts.init(chartDom2);
+
+        const loadoption = {
+            animationDuration: 1000,
+            // title: {
+            //     text: 'Pressure Data Visualization'
+            // },
+            legend: {
+                data: ['Pressure 1', 'Pressure 2']
+            },
+            tooltip: {
+                order: 'valueDesc',
+                trigger: 'axis'
+            },
+            toolbox: {
+                feature: {
+                    saveAsImage: {},
+                    // brush: {},
+                    // restore: {},
+                    // dataView: {}
+                }
+            },
+            xAxis: {
+                type: 'category',
+                name: 'Time (s)',
+                nameLocation: 'middle',
+                data: [] // Time labels
+            },
+            yAxis: {
+                name: 'Pressure'
+            },
+            grid: {
+                left: '5%',
+                right: '0%',
+                top: '10%',
+                bottom: '10%'
+            },
+            dataZoom: [
+                // {
+                //     type: 'slider',
+                //     start: 0,
+                //     end: 100
+                // },
+                {
+                    type: 'inside',
+                    start: 0,
+                    end: 100
+                }
+            ],
+            series: [
+                {
+                    name: 'Pressure 1',
+                    type: 'line',
+                    showSymbol: true,
+                    smooth: true,
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    data: [] // Pressure 1 data
+                }
+            ]
+        };
+
         //for temp
         const tempChart = echarts.init(chartDom3);
 
@@ -223,6 +287,7 @@
         };
 
         myChart.setOption(option);
+        loadChart.setOption(loadoption);
         tempChart.setOption(tempOption);
 
         // Plot initial data
