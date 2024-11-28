@@ -19,3 +19,4 @@ with pd.ExcelWriter('output.xlsx', engine='xlsxwriter') as writer:
 
 # Close the database connection
 conn.close()
+

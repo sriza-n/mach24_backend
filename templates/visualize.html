@@ -41,10 +41,10 @@
         #pressureChart,
         #newton,
         #temperature,
-        #stress {
+        #video-container {
             width: 100%;
-            /* height: 357px; */
-            height: 450px;
+            height: 357px;
+            /* height: 450px; */
             position: relative;
             left: 'center';
             top: 'middle';
@@ -60,11 +60,13 @@
             overflow-clip-margin: content-box;
             overflow: clip;
         }
+
         img[style] {
             width: 100%;
             aspect-ratio: auto 559 / 314;
-            height: 450px;
+            height: 375px;
         }
+
         /* element.style {
         display: block;
         user-select: none;
@@ -84,20 +86,25 @@
         </div>
         <div class="row justify-content-evenly">
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
-                <div id="pressureChart" ></div>
+                <div id="pressureChart"></div>
             </div>
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
-                <div id="newton" ></div>
+                <div id="newton"></div>
             </div>
         </div>
-        <div class="row justify-content-evenly" >
+        <div class="row justify-content-evenly">
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
                 <div id="temperature"></div>
             </div>
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
-                <div id="stress">  
-                <!-- <iframe src="http://192.168.1.113:8080/video" height="100%"width="100%" allowfullscreen></iframe>   -->
-                <img class="responsive-video" style="display: block;user-select: none;-webkit-user-select: none;margin: auto;background-color: hsl(0, 0%, 25%);" src="http://192.168.1.113:8080/video">
+                <div id="video-container">
+                    <img class="responsive-video"
+                        style="display: block; user-select: none; -webkit-user-select: none; margin: auto; background-color: hsl(0, 0%, 25%);"
+                        src="http://192.168.1.113:8080/video"
+                        onerror="this.onerror=null; this.src='error-placeholder.png'; this.classList.add('stream-error');">
+                    <div class="error-message" style="display:none">
+                        Video stream not available
+                    </div>
                 </div>
             </div>
         </div>
@@ -120,7 +127,7 @@
             //     text: 'Pressure Data Visualization'
             // },
             legend: {
-                data: ['Pressure 1', 'Pressure 2']
+                data: ['Pressure 1', 'Pressure 2', 'Pressure 3']
             },
             tooltip: {
                 order: 'valueDesc',
@@ -138,13 +145,18 @@
                 type: 'category',
                 name: 'Time (s)',
                 nameLocation: 'middle',
+                nameGap: 22,
                 data: [] // Time labels
             },
             yAxis: {
-                name: 'Pressure (psi)'
+                name: 'Pressure (psi)',
+                nameLocation: 'middle',
+                nameGap: 30,
+                // offset:10
+                // boundaryGap: ['20%']
             },
             grid: {
-                left: '5%',
+                left: '7%',
                 right: '0%',
                 top: '10%',
                 bottom: '10%'
@@ -181,7 +193,18 @@
                         focus: 'series'
                     },
                     data: [] // Pressure 2 data
+                },
+                {
+                    name: 'Pressure 3',
+                    type: 'line',
+                    showSymbol: true,
+                    smooth: true,
+                    emphasis: {
+                        focus: 'series'
+                    },
+                    data: [] // Pressure 2 data
                 }
+
             ]
         };
 
@@ -213,12 +236,15 @@
                 name: 'Time (s)',
                 nameLocation: 'middle',
                 data: [] // Time labels
+                , nameGap: 22,
             },
             yAxis: {
-                name: 'loadcell (N)'
+                name: 'loadcell (N)',
+                nameLocation: 'middle',
+                nameGap: 30,
             },
             grid: {
-                left: '5%',
+                left: '7%',
                 right: '0%',
                 top: '10%',
                 bottom: '10%'
@@ -237,14 +263,14 @@
             ],
             series: [
                 {
-                    name: 'Pressure 1',
+                    name: 'loadcell',
                     type: 'line',
                     showSymbol: true,
                     smooth: true,
                     emphasis: {
                         focus: 'series'
                     },
-                    data: [] // Pressure 1 data
+                    data: [] // loadcell data
                 }
             ]
         };
@@ -266,12 +292,15 @@
                 name: 'Time (s)',
                 nameLocation: 'middle',
                 data: [] // Time labels
+                , nameGap: 22,
             },
             yAxis: {
-                name: 'Temperature'
+                name: 'Temperature (°C)',
+                nameLocation: 'middle',
+                nameGap: 30,
             },
             grid: {
-                left: '5%',
+                left: '7%',
                 right: '0%',
                 top: '10%',
                 bottom: '10%'
@@ -316,12 +345,14 @@
             const timeString = record.time;
             const pressure1 = record.pressure1;
             const pressure2 = record.pressure2;
+            const pressure3 = record.pressure3;
             const temperature1 = record.temperature1;
-            const loadChart = record.loadcell;
+            const loadcell = record.loadcell;
 
             option.xAxis.data.unshift(timeString);
             option.series[0].data.unshift(pressure1);
             option.series[1].data.unshift(pressure2);
+            option.series[2].data.unshift(pressure3);
 
             //for temp
             tempOption.xAxis.data.unshift(timeString);
@@ -329,7 +360,7 @@
 
             //for loadcell
             loadoption.xAxis.data.unshift(timeString);
-            loadoption.series[0].data.unshift(loadChart);
+            loadoption.series[0].data.unshift(loadcell);
             timeSet.add(timeString);
         });
 
@@ -348,19 +379,26 @@
                         const timeString = latestData.time;
                         const pressure1 = latestData.pressure1;
                         const pressure2 = latestData.pressure2;
+                        const pressure3 = latestData.pressure3;
                         const temperature1 = latestData.temperature1;
-                        const temperature2 = latestData.temperature2;
+                        const loadcell = latestData.loadcell;
 
                         option.xAxis.data.push(timeString);
                         option.series[0].data.push(pressure1);
                         option.series[1].data.push(pressure2);
+                        option.series[2].data.push(pressure3);
 
                         //for temp
                         tempOption.xAxis.data.push(timeString);
                         tempOption.series[0].data.push(temperature1);
-                        tempOption.series[1].data.push(temperature2);
+
+                        //for loadcell
+                        loadoption.xAxis.data.push(timeString);
+                        loadoption.series[0].data.push(loadcell);
+
 
                         myChart.setOption(option);
+                        loadChart.setOption(loadoption);
                         tempChart.setOption(tempOption);
                     }
                 })
