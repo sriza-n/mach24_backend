@@ -342,6 +342,25 @@ def visualize_data():
     # return jsonify(data), 200
     return render_template('visualize.html',data=data)
 
+
+@app.route('/stream', methods=['GET'])
+def stream_data():
+    records = SensorData0.query.order_by(SensorData0.id.desc()).all()
+    data = [
+        {"date": record.date,
+        "time":record.time,
+        "pressure1": record.pressure1,
+        "pressure2": record.pressure2,
+        "pressure3": record.pressure3,
+        "temperature1": record.temperature1,
+        "loadcell": record.loadcell}
+        for record in records
+    ]
+    # global data
+    # return jsonify(data), 200
+    return render_template('stream.html',data=data)
+
+
 @app.route('/latest_data', methods=['GET'])
 def latest_data():
     records = SensorData0.query.order_by(SensorData0.id.desc()).limit(1).all()
