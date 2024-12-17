@@ -1,6 +1,6 @@
 document.addEventListener('DOMContentLoaded', (event) => {
     const chartDom1 = document.getElementById('pressure');
-    const chartDom2 = document.getElementById('loadcell');
+    const chartDom2 = document.getElementById('newton');
     const chartDom3 = document.getElementById('temperature');
     const myChart = echarts.init(chartDom1,'dark');
 

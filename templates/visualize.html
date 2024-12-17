@@ -7,7 +7,8 @@
     <title>Data Visualization</title>
     <!-- <link rel="stylesheet" href="static\css\style.css" /> -->
     <!-- Use CDN for ECharts -->
-    <script src="static/lib/echarts.min.js"></script>
+    <script src="static\lib\echarts.min.js"></script>
+    <script type="text/javascript" src="static\js\visualize.js"></script>
     <!-- <script type="text/javascript" src="static\js\visualize.js"></script> -->
     <script src="static\lib\bootstrap.bundle.min.js"></script>
     <link href="static\lib\bootstrap.min.css" rel="stylesheet">
@@ -88,7 +89,7 @@
                 <div id="pressureChart"></div>
             </div>
             <div class="col-lg-6" style="border-right: 2px solid rgb(0, 0, 0); border-bottom: 2px solid rgb(0, 0, 0);">
-                <div id="loadcell"></div>
+                <div id="newton"></div>
             </div>
         </div>
         <div class="row justify-content-evenly">
@@ -114,9 +115,13 @@
 <script>
     document.addEventListener('DOMContentLoaded', (event) => {
         const chartDom1 = document.getElementById('pressureChart');
-        const chartDom2 = document.getElementById('loadcell');
+        const chartDom2 = document.getElementById('newton');
         const chartDom3 = document.getElementById('temperature');
 
+        if (!chartDom2) {
+            console.error('Element with id "loadcell1" not found');
+            return;
+        }
 
         const myChart = echarts.init(chartDom1,'dark');
 

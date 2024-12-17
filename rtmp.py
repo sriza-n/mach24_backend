@@ -1,4 +1,9 @@
+import requests
+from flask import Flask, Response
 
+app = Flask(__name__)
+
+@app.route('/video')
 def video_feed():
     ip_camera_url = "http://192.168.1.4:8080/video"
     response = requests.get(ip_camera_url, stream=True)
@@ -32,3 +37,5 @@ def video_feed():
     return Response(generate(), content_type='multipart/x-mixed-replace; boundary=frame')
 
 
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=5000)
