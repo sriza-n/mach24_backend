@@ -2,6 +2,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
     const chartDom1 = document.getElementById('pressure');
     const chartDom2 = document.getElementById('newton');
     const chartDom3 = document.getElementById('temperature');
+    
+    
     const myChart = echarts.init(chartDom1,'dark');
 
     const option = {
@@ -237,6 +239,8 @@ document.addEventListener('DOMContentLoaded', (event) => {
 
     // Plot initial data
     const initialData = JSON.parse('{{ data | tojson | safe }}');
+    // const initialDataElement = document.getElementById('initial-data');
+    // const initialData = initialDataElement ? JSON.parse(initialDataElement.textContent) : [];
     const timeSet = new Set();
     initialData.forEach(record => {
         const timeString = record.time;

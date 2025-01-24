@@ -2,7 +2,9 @@
 # pip install Flask-SQLAlchemy
 # pip install -U flask-cors
 # pip install flask-socketio
-from flask import Flask, jsonify , render_template
+# pip freeze > requirements.txt
+from flask import Flask, jsonify , render_template , Response
+import logging
 from flask_socketio import SocketIO, emit
 import serial
 import serial.tools.list_ports
@@ -13,7 +15,12 @@ from datetime import datetime
 import json
 from flask_cors import CORS
 from flask import send_from_directory
-import os
+import requests
+# from flask_talisman import Talisman
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 # from flask_talisman import Talisman
 # from werkzeug.middleware.proxy_fix import ProxyFix
 
@@ -67,7 +74,8 @@ class SensorData(db.Model):
     teensytime = db.Column(db.String(20), nullable=False)
     pressure1 = db.Column(db.Float, nullable=False)
     pressure2 = db.Column(db.Float, nullable=False)
-    pressure3 = db.Column(db.Float, nullable=False)
+    # pressure3 = db.Column(db.Float, nullable=False)
+    St = db.Column(db.Integer, nullable=False)
     temperature1 = db.Column(db.Float, nullable=False)
     loadcell = db.Column(db.Float, nullable=False)
     # t3 = db.Column(db.Float, nullable=False)
@@ -78,7 +86,7 @@ class StatusData(db.Model):
     k1 = db.Column(db.Integer, nullable=False)
     k2 = db.Column(db.Integer, nullable=False)
     k3 = db.Column(db.Integer, nullable=False)
-    st = db.Column(db.String(20), nullable=False)
+    # St = db.Column(db.Integer, nullable=False)
 
 
 class SensorData0(db.Model):
@@ -88,20 +96,22 @@ class SensorData0(db.Model):
     teensytime = db.Column(db.String(20), nullable=False)
     pressure1 = db.Column(db.Float, nullable=False)
     pressure2 = db.Column(db.Float, nullable=False)
-    pressure3 = db.Column(db.Float, nullable=False)
+    # pressure3 = db.Column(db.Float, nullable=False)
+    St = db.Column(db.Integer, nullable=False)
     temperature1 = db.Column(db.Float, nullable=False)
     loadcell = db.Column(db.Float, nullable=False)
 
-class SensorData1(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    date = db.Column(db.String(20), nullable=False)
-    time = db.Column(db.String(20), nullable=False)
-    teensytime = db.Column(db.String(20), nullable=False)
-    pressure1 = db.Column(db.Float, nullable=False)
-    pressure2 = db.Column(db.Float, nullable=False)
-    pressure3 = db.Column(db.Float, nullable=False)
-    temperature1 = db.Column(db.Float, nullable=False)
-    loadcell = db.Column(db.Float, nullable=False)
+# class SensorData1(db.Model):
+#     id = db.Column(db.Integer, primary_key=True)
+#     date = db.Column(db.String(20), nullable=False)
+#     time = db.Column(db.String(20), nullable=False)
+#     teensytime = db.Column(db.String(20), nullable=False)
+#     pressure1 = db.Column(db.Float, nullable=False)
+#     pressure2 = db.Column(db.Float, nullable=False)
+#     # pressure3 = db.Column(db.Float, nullable=False)
+#     St = db.Column(db.Integer, nullable=False)
+#     temperature1 = db.Column(db.Float, nullable=False)
+#     loadcell = db.Column(db.Float, nullable=False)
 
 # Create the database and the table
 with app.app_context():
@@ -181,137 +191,264 @@ def serial_communication():
             close_serial()
             # break
 
+# Constants
+DATA_PREFIX = "D:"
+STATUS_PREFIX = "S:"
+DATETIME_FORMAT = '%Y-%m-%d'
+TIME_FORMAT = '%H:%M:%S:%f'
+STATUS_KEYS = ['k1', 'k2', 'k3']
 
-date1 = None
-time1 = None
-teensytime = None
-pressure1 = None
-pressure2 = None
-pressure3 = None
-temperature1 = None
-loadcell = None
-status_all_one_flag = False
+
+class DataProcessor:
+    def __init__(self):
+        self.current_data = {}
+        
+    def process_sensor_data(self, message):
+        try:
+            data = json.loads(message[len(DATA_PREFIX):])
+            date_time = datetime.now()
+            
+            self.current_data = {
+                'date': date_time.strftime(DATETIME_FORMAT),
+                'time': date_time.strftime(TIME_FORMAT)[:-3],
+                'teensytime': data.get('T'),
+                'pressure1': data.get('p1'),
+                'pressure2': data.get('p2'),
+                'St': data.get('ST'),
+                'temperature1': data.get('T1'),
+                'loadcell': data.get('LC')
+            }
+            return self.current_data
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in sensor data")
+            return None
+
+    def process_status_data(self, message):
+        try:
+            status = json.loads(message[len(STATUS_PREFIX):])
+            return {key: status.get(key) for key in STATUS_KEYS}
+            # return status
+        except json.JSONDecodeError:
+            logger.error("Invalid JSON in status data")
+            return None
+
+# Create persistent processor instance
+data_processor = DataProcessor()
 
 def filter_message(message):
-    if message.startswith("D:"):
-        global data, date1, time1,teensytime, pressure1, pressure2, pressure3, temperature1, loadcell, status_all_one_flag
-        data = message[2:]
-        print("Data message received:", data)
-        # Convert the data string to a dictionary
-        data_dict = json.loads(data)
-        # Assign values to variables
-        date_time = datetime.now()
-        date1 = date_time.strftime('%Y-%m-%d')
-        time1 = date_time.strftime('%H:%M:%S:%f')[:-3]
-        teensytime = data_dict.get('T')
-        pressure1 = data_dict.get('p1')
-        pressure2 = data_dict.get('p2')
-        pressure3 = data_dict.get('p3')
-        temperature1 = data_dict.get('T1')
-        loadcell = data_dict.get('LC')
+    db_manager = DatabaseManager()
+    
+    try:
+        if message.startswith(DATA_PREFIX):
+            data = data_processor.process_sensor_data(message)
+            if data:
+                logger.info(f"Data received: {data}")
+                
+        elif message.startswith(STATUS_PREFIX):
+            status = data_processor.process_status_data(message)
+            if status and data_processor.current_data:
+                logger.info(f"Status received: {status}")
+                try:
+                    with app.app_context():
+                        db_manager.save_sensor_data(data_processor.current_data, status)
+                        logger.info("Data saved successfully")
+                except Exception as e:
+                    logger.error(f"Database save error: {str(e)}")
+                
+        else:
+            logger.warning(f"Unknown message type: {message}")
+            
+    except Exception as e:
+        logger.error(f"Error processing message: {str(e)}")
+        raise
 
-        # print("teensytime:", teensytime)
-        # print("pressure1:", pressure1)
-        # print("pressure2:", pressure2)
-        # print("pressure3:", pressure3)
-        # print("temperature1:", temperature1)
-        # print("loadcell:", loadcell)
-        # new_record = SensorData0(
-        #     date=date1,
-        #     time=time1,
-        #     teensytime=teensytime,
-        #     pressure1=pressure1,
-        #     pressure2=pressure2,
-        #     pressure3=pressure3,
-        #     temperature1=temperature1,
-        #     loadcell=loadcell
-        # )
-
-        # with app.app_context():
-        #     db.session.add(new_record)
-        #     db.session.commit()
-            # Emit the new data to all connected clients
-            # socketio.emit('new_data', {
-            #     'date': date,
-            #     'time': time,
-            #     'pressure1': pressure1,
-            #     'pressure2': pressure2,
-            #     'pressure3': pressure3,
-            #     'temperature1': temperature1,
-            #     'temperature2': temperature2
-            # })
-
-    elif message.startswith("S:"):
-        status = message[2:]
-        print("Status message received:", status)
-        status_dict = json.loads(status)
-
-        with app.app_context():
-            existing_record = StatusData.query.first()
-            if existing_record is None:
-                new_status = StatusData(
-                    k1=status_dict.get('k1'),
-                    k2=status_dict.get('k2'),
-                    k3=status_dict.get('k3'),
-                    st=status_dict.get('St')
-
-                )
-                db.session.add(new_status)
+class DatabaseManager:
+    @staticmethod
+    def save_sensor_data(data, status):
+        try:
+            # Determine which table to use based on St value
+            if data.get('St') == 1:
+                model = SensorData0
             else:
-                existing_record.k1 = status_dict.get('k1')
-                existing_record.k2 = status_dict.get('k2')
-                existing_record.k3 = status_dict.get('k3')
-                existing_record.st = status_dict.get('St')
+                model = SensorData
+
+            new_record = model(**data)
+            db.session.add(new_record)
+            
+            # Update status table
+            status_record = StatusData(**status)
+            db.session.query(StatusData).delete()
+            db.session.add(status_record)
+            
             db.session.commit()
-            # socketio.emit('status', {
-            #     'k1': status_dict.get('k1'),
-            #     'k2': status_dict.get('k2'),
-            #     'k3': status_dict.get('k3')
-            # })
-        # Check if all status values are 1 and store in SensorData
-            # if status_dict.get('k1') == 1 and status_dict.get('k2') == 1 and status_dict.get('k3') == 1:
-            #     status_all_one_flag = True
+            socketio.emit('new_data', data)
+            socketio.emit('status_update', status)
+            return True
+            
+        except Exception as e:
+            logger.error(f"Database error: {str(e)}")
+            db.session.rollback()
+            return False
+# class DatabaseManager:
+#     @staticmethod
+#     def save_sensor_data(data, status):
+#         try:
+#             # Determine which table to use based on status
+#             if all(status.get(k) == 1 for k in STATUS_KEYS):
+#                 model = SensorData
+#             elif all(status.get(k) == 1 for k in STATUS_KEYS[:2]):
+#                 model = SensorData1
+#             else:
+#                 model = SensorData0
+
+#             new_record = model(**data)
+#             db.session.add(new_record)
+            
+#             # Update status table
+#             status_record = StatusData(**status)
+#             db.session.query(StatusData).delete()
+#             db.session.add(status_record)
+            
+#             db.session.commit()
+#             socketio.emit('new_data', data)
+#             socketio.emit('status_update', status)
+#             return True
+            
+#         except Exception as e:
+#             logger.error(f"Database error: {str(e)}")
+#             db.session.rollback()
+#             return False
+
+# date1 = None
+# time1 = None
+# teensytime = None
+# pressure1 = None
+# pressure2 = None
+# pressure3 = None
+# temperature1 = None
+# loadcell = None
+# status_all_one_flag = False
+
+# def filter_message(message):
+#     if message.startswith("D:"):
+#         global data, date1, time1,teensytime, pressure1, pressure2, pressure3, temperature1, loadcell, status_all_one_flag
+#         data = message[2:]
+#         print("Data message received:", data)
+#         # Convert the data string to a dictionary
+#         data_dict = json.loads(data)
+#         # Assign values to variables
+#         date_time = datetime.now()
+#         date1 = date_time.strftime('%Y-%m-%d')
+#         time1 = date_time.strftime('%H:%M:%S:%f')[:-3]
+#         teensytime = data_dict.get('T')
+#         pressure1 = data_dict.get('p1')
+#         pressure2 = data_dict.get('p2')
+#         pressure3 = data_dict.get('p3')
+#         temperature1 = data_dict.get('T1')
+#         loadcell = data_dict.get('LC')
+
+#         # print("teensytime:", teensytime)
+#         # print("pressure1:", pressure1)
+#         # print("pressure2:", pressure2)
+#         # print("pressure3:", pressure3)
+#         # print("temperature1:", temperature1)
+#         # print("loadcell:", loadcell)
+#         # new_record = SensorData0(
+#         #     date=date1,
+#         #     time=time1,
+#         #     teensytime=teensytime,
+#         #     pressure1=pressure1,
+#         #     pressure2=pressure2,
+#         #     pressure3=pressure3,
+#         #     temperature1=temperature1,
+#         #     loadcell=loadcell
+#         # )
+
+#         # with app.app_context():
+#         #     db.session.add(new_record)
+#         #     db.session.commit()
+#             # Emit the new data to all connected clients
+#             # socketio.emit('new_data', {
+#             #     'date': date,
+#             #     'time': time,
+#             #     'pressure1': pressure1,
+#             #     'pressure2': pressure2,
+#             #     'pressure3': pressure3,
+#             #     'temperature1': temperature1,
+#             #     'temperature2': temperature2
+#             # })
+
+#     elif message.startswith("S:"):
+#         status = message[2:]
+#         print("Status message received:", status)
+#         status_dict = json.loads(status)
+
+#         with app.app_context():
+#             existing_record = StatusData.query.first()
+#             if existing_record is None:
+#                 new_status = StatusData(
+#                     k1=status_dict.get('k1'),
+#                     k2=status_dict.get('k2'),
+#                     k3=status_dict.get('k3'),
+#                     st=status_dict.get('St')
+
+#                 )
+#                 db.session.add(new_status)
+#             else:
+#                 existing_record.k1 = status_dict.get('k1')
+#                 existing_record.k2 = status_dict.get('k2')
+#                 existing_record.k3 = status_dict.get('k3')
+#                 existing_record.st = status_dict.get('St')
+#             db.session.commit()
+#             # socketio.emit('status', {
+#             #     'k1': status_dict.get('k1'),
+#             #     'k2': status_dict.get('k2'),
+#             #     'k3': status_dict.get('k3')
+#             # })
+#         # Check if all status values are 1 and store in SensorData
+#             # if status_dict.get('k1') == 1 and status_dict.get('k2') == 1 and status_dict.get('k3') == 1:
+#             #     status_all_one_flag = True
 
             
-            if all(status_dict.get(k) == 1 for k in ('k1', 'k2', 'k3')):
-                new_record = SensorData(
-                date=date1,
-                time=time1,
-                teensytime=teensytime,
-                pressure1=pressure1,
-                pressure2=pressure2,
-                pressure3=pressure3,
-                temperature1=temperature1,
-                loadcell=loadcell
-            )
-            elif all(status_dict.get(k) == 1 for k in ('k1', 'k2')):
-                new_record = SensorData1(
-                date=date1,
-                time=time1,
-                teensytime=teensytime,
-                pressure1=pressure1,
-                pressure2=pressure2,
-                pressure3=pressure3,
-                temperature1=temperature1,
-                loadcell=loadcell
-                )
-            else:
-                new_record = SensorData0(
-                date=date1,
-                time=time1,
-                teensytime=teensytime,
-                pressure1=pressure1,
-                pressure2=pressure2,
-                pressure3=pressure3,
-                temperature1=temperature1,
-                loadcell=loadcell 
-            )
+#             if all(status_dict.get(k) == 1 for k in ('k1', 'k2', 'k3')):
+#                 new_record = SensorData(
+#                 date=date1,
+#                 time=time1,
+#                 teensytime=teensytime,
+#                 pressure1=pressure1,
+#                 pressure2=pressure2,
+#                 pressure3=pressure3,
+#                 temperature1=temperature1,
+#                 loadcell=loadcell
+#             )
+#             elif all(status_dict.get(k) == 1 for k in ('k1', 'k2')):
+#                 new_record = SensorData1(
+#                 date=date1,
+#                 time=time1,
+#                 teensytime=teensytime,
+#                 pressure1=pressure1,
+#                 pressure2=pressure2,
+#                 pressure3=pressure3,
+#                 temperature1=temperature1,
+#                 loadcell=loadcell
+#                 )
+#             else:
+#                 new_record = SensorData0(
+#                 date=date1,
+#                 time=time1,
+#                 teensytime=teensytime,
+#                 pressure1=pressure1,
+#                 pressure2=pressure2,
+#                 pressure3=pressure3,
+#                 temperature1=temperature1,
+#                 loadcell=loadcell 
+#             )
 
-            db.session.add(new_record)
-            db.session.commit()
+#             db.session.add(new_record)
+#             db.session.commit()
 
-    else:
-        print("Unknown message type:", message)
+#     else:
+#         print("Unknown message type:", message)
 
 # @app.route('/data', methods=['POST'])
 # def receive_data():
@@ -333,7 +470,7 @@ def visualize_data():
         "time":record.time,
         "pressure1": record.pressure1,
         "pressure2": record.pressure2,
-        "pressure3": record.pressure3,
+        # "pressure3": record.pressure3,
         "temperature1": record.temperature1,
         "loadcell": record.loadcell}
         for record in records
@@ -351,7 +488,7 @@ def stream_data():
         "time":record.time,
         "pressure1": record.pressure1,
         "pressure2": record.pressure2,
-        "pressure3": record.pressure3,
+        # "pressure3": record.pressure3,
         "temperature1": record.temperature1,
         "loadcell": record.loadcell}
         for record in records
@@ -370,7 +507,7 @@ def latest_data():
             "time": record.time,
             "pressure1": record.pressure1,
             "pressure2": record.pressure2,
-            "pressure3": record.pressure3,
+            # "pressure3": record.pressure3,
             "temperature1": record.temperature1,
             "loadcell": record.loadcell
         }
@@ -394,6 +531,40 @@ def get_status():
 def index():
     print("index Status message received:------------------------", status)
     return render_template('index.html')
+
+@app.route('/video')
+def video_feed():
+    ip_camera_url = "http://192.168.1.3:8080/video"
+    response = requests.get(ip_camera_url, stream=True)
+    if response.status_code != 200:
+        return f"Error: Unable to access the camera stream (status code {response.status_code})"
+    
+    boundary = response.headers['Content-Type'].split('boundary=')[-1]
+    boundary = boundary.encode()
+    print(f"Boundary: {boundary.decode()}")  # Debugging: Print boundary
+
+    def generate():
+        buffer = b""
+        for chunk in response.iter_content(chunk_size=8192):
+            buffer += chunk
+            while True:
+                start = buffer.find(boundary)
+                if start == -1:
+                    break
+                end = buffer.find(boundary, start + len(boundary))
+                if end == -1:
+                    break
+                frame = buffer[start + len(boundary):end]
+                buffer = buffer[end:]
+                if frame:
+                    header_end = frame.find(b'\r\n\r\n')
+                    if header_end != -1:
+                        frame = frame[header_end + 4:]
+                        yield (b'--frame\r\n'
+                               b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+
+    return Response(generate(), content_type='multipart/x-mixed-replace; boundary=frame')
+
 
 # @app.route('/node_modules/<path:path>')
 # def serve_node_modules(path):

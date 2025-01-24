@@ -96,6 +96,10 @@ document.addEventListener('DOMContentLoaded', (event) => {
             console.log('websocket Status received:', data);
         });
 
+        socket.on('status_update', function(status) {
+            console.log('websocket Status received:', status);
+        });
+
         socket.on('disconnect', function() {
             console.log('Disconnected from server');
         });
@@ -147,7 +151,7 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     };
 
-    setInterval(fetchData, 1000);
+    // setInterval(fetchData, 1000);
 });
 
 // function changeImage(id) {
