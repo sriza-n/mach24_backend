@@ -7,23 +7,35 @@
     <link href="static\lib\bootstrap.min.css" rel="stylesheet">
 </head>
 <style>
+    body {
+            margin: 0;
+            overflow: hidden;
+        }
+        
+        html {
+            scrollbar-width: none; /* For Firefox */
+            -ms-overflow-style: none; /* For Internet Explorer and Edge */
+        }
+        
+        /* For Webkit browsers (Chrome, Safari) */
+        html::-webkit-scrollbar {
+            display: none;
+        }
     .video-background {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: -1;
+    /* overflow: hidden; */
+    /* z-index: -1; */
 }
 
 #background-video {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
     object-fit: cover;
+    overflow: hidden;
+
 }
 </style>
 <body>
@@ -35,14 +47,16 @@
             </video>
         </div>
         <div class="row justify-content-center position-relative" style="z-index: 1;">
-            <div class="col-xl-8" style="border: 2px solid rgb(0, 0, 0);">
+            <!-- <div class="col-xl-8" style="border: 1px solid rgb(0, 0, 0);"> -->
+                <div class="col-xl-8" >
                 <div class="row justify-content-center mb-5 mt-5">
                     <img src="static/assets/mach24.png" alt="Mach24 Orbitals" class="hero-image img-fluid mb-lg-0" id="controlBtn">
                 </div>
-                <div class="row mb-4" style="border: 2px solid rgb(233, 4, 4);">
+                <!-- <div class="row mb-4" style="border: 2px solid rgb(233, 4, 4);"> -->
+                    <div class="row mb-4" >
                     <div class="col align-self-center ratio ratio-16x9">
                         <img 
-                        style="display: block; user-select: none; -webkit-user-select: none; margin: auto; background-color: hsl(0, 0%, 25%);"
+                        style="display: block; user-select: none; -webkit-user-select: none; margin: auto; background-color: hsl(0, 0%, 25%); opacity: 0.8;"
                         src="/video"
                         onerror="this.onerror=null; this.src='error-placeholder.png'; this.classList.add('stream-error');">
                     </div>
@@ -69,12 +83,8 @@
         const chartDom2 = document.getElementById('newton');
         const chartDom3 = document.getElementById('temperature');
 
-        if (!chartDom2) {
-            console.error('Element with id "loadcell1" not found');
-            return;
-        }
 
-        const myChart = echarts.init(chartDom1);
+        const myChart = echarts.init(chartDom1,'dark');
 
         const option = {
             animationDuration: 1000,
@@ -85,7 +95,7 @@
             legend: {
                 data: ['Pressure 1', 'Pressure 2'],
                 textStyle: {
-                    color: '#333'  // Ensure legend text remains visible
+                    color: '#fff'  // Ensure legend text remains visible
                 },
                 backgroundColor: 'transparent'
                 // backgroundColor: 'rgb(0, 0, 0)',
@@ -168,7 +178,11 @@
             //     text: 'Pressure Data Visualization'
             // },
             legend: {
-                data: ['loadcell']
+                data: ['loadcell'],
+                textStyle: {
+                    color: '#fff'  // Ensure legend text remains visible
+                },
+                backgroundColor: 'transparent'
             },
             tooltip: {
                 order: 'valueDesc',
@@ -228,11 +242,16 @@
 
         //for temp
         const tempChart = echarts.init(chartDom3,'dark');
+        // const tempChart = echarts.init(chartDom3);
 
         const tempOption = {
             animationDuration: 1000,
             legend: {
-                data: ['Temperature 1']
+                data: ['Thermocouple'],
+                textStyle: {
+                    color: '#fff'  // Ensure legend text remains visible
+                },
+                backgroundColor: 'transparent'
             },
             tooltip: {
                 order: 'valueDesc',
@@ -271,7 +290,7 @@
             }],
             series: [
                 {
-                    name: 'Temperature 1',
+                    name: 'Thermocouple',
                     type: 'line',
                     showSymbol: true,
                     smooth: true,
@@ -304,17 +323,16 @@
             const timeString = record.time;
             const pressure1 = record.pressure1;
             const pressure2 = record.pressure2;
-            const temperature1 = record.temperature1;
+            const Thermocouple = record.temperature1;
             const loadcell = record.loadcell;
 
             option.xAxis.data.unshift(timeString);
             option.series[0].data.unshift(pressure1);
             option.series[1].data.unshift(pressure2);
-            option.series[2].data.unshift(pressure3);
 
             //for temp
             tempOption.xAxis.data.unshift(timeString);
-            tempOption.series[0].data.unshift(temperature1);
+            tempOption.series[0].data.unshift(Thermocouple);
 
             //for loadcell
             loadoption.xAxis.data.unshift(timeString);
@@ -337,17 +355,16 @@
                         const timeString = latestData.time;
                         const pressure1 = latestData.pressure1;
                         const pressure2 = latestData.pressure2;
-                        const temperature1 = latestData.temperature1;
+                        const Thermocouple = latestData.temperature1;
                         const loadcell = latestData.loadcell;
 
                         option.xAxis.data.push(timeString);
                         option.series[0].data.push(pressure1);
                         option.series[1].data.push(pressure2);
-                        option.series[2].data.push(pressure3);
 
                         //for temp
                         tempOption.xAxis.data.push(timeString);
-                        tempOption.series[0].data.push(temperature1);
+                        tempOption.series[0].data.push(Thermocouple);
 
                         //for loadcell
                         loadoption.xAxis.data.push(timeString);

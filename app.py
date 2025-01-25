@@ -3,6 +3,9 @@
 # pip install -U flask-cors
 # pip install flask-socketio
 # pip freeze > requirements.txt
+# Create venv
+# python -m venv .venv
+# pip install -r requirements.txt
 from flask import Flask, jsonify , render_template , Response
 import logging
 from flask_socketio import SocketIO, emit
@@ -534,7 +537,7 @@ def index():
 
 @app.route('/video')
 def video_feed():
-    ip_camera_url = "http://192.168.1.3:8080/video"
+    ip_camera_url = "http://192.168.1.2:8080/video"
     response = requests.get(ip_camera_url, stream=True)
     if response.status_code != 200:
         return f"Error: Unable to access the camera stream (status code {response.status_code})"
