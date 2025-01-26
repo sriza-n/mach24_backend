@@ -194,104 +194,114 @@ def serial_communication():
             close_serial()
             # break
 
-# Constants
-DATA_PREFIX = "D:"
-STATUS_PREFIX = "S:"
-DATETIME_FORMAT = '%Y-%m-%d'
-TIME_FORMAT = '%H:%M:%S:%f'
-STATUS_KEYS = ['k1', 'k2', 'k3']
+# # Constants
+# DATA_PREFIX = "D:"
+# STATUS_PREFIX = "S:"
+# DATETIME_FORMAT = '%Y-%m-%d'
+# TIME_FORMAT = '%H:%M:%S:%f'
+# STATUS_KEYS = ['k1', 'k2', 'k3']
 
 
-class DataProcessor:
-    def __init__(self):
-        self.current_data = {}
+# class DataProcessor:
+#     def __init__(self):
+#         self.current_data = {}
         
-    def process_sensor_data(self, message):
-        try:
-            data = json.loads(message[len(DATA_PREFIX):])
-            date_time = datetime.now()
+#     def process_sensor_data(self, message):
+#         try:
+#             data = json.loads(message[len(DATA_PREFIX):])
+#             date_time = datetime.now()
             
-            self.current_data = {
-                'date': date_time.strftime(DATETIME_FORMAT),
-                'time': date_time.strftime(TIME_FORMAT)[:-3],
-                'teensytime': data.get('T'),
-                'pressure1': data.get('p1'),
-                'pressure2': data.get('p2'),
-                'St': data.get('ST'),
-                'temperature1': data.get('T1'),
-                'loadcell': data.get('LC')
-            }
-            return self.current_data
-        except json.JSONDecodeError:
-            logger.error("Invalid JSON in sensor data")
-            return None
+#             self.current_data = {
+#                 'date': date_time.strftime(DATETIME_FORMAT),
+#                 'time': date_time.strftime(TIME_FORMAT)[:-3],
+#                 'teensytime': data.get('T'),
+#                 'pressure1': data.get('p1'),
+#                 'pressure2': data.get('p2'),
+#                 'St': data.get('ST'),
+#                 'temperature1': data.get('T1'),
+#                 'loadcell': data.get('LC')
+#             }
+#             return self.current_data
+#         except json.JSONDecodeError:
+#             logger.error("Invalid JSON in sensor data")
+#             return None
 
-    def process_status_data(self, message):
-        try:
-            status = json.loads(message[len(STATUS_PREFIX):])
-            return {key: status.get(key) for key in STATUS_KEYS}
-            # return status
-        except json.JSONDecodeError:
-            logger.error("Invalid JSON in status data")
-            return None
+#     def process_status_data(self, message):
+#         try:
+#             status = json.loads(message[len(STATUS_PREFIX):])
+#             return {key: status.get(key) for key in STATUS_KEYS}
+#             # return status
+#         except json.JSONDecodeError:
+#             logger.error("Invalid JSON in status data")
+#             return None
 
-# Create persistent processor instance
-data_processor = DataProcessor()
+# # Create persistent processor instance
+# data_processor = DataProcessor()
 
-def filter_message(message):
-    db_manager = DatabaseManager()
+# def filter_message(message):
+#     db_manager = DatabaseManager()
     
-    try:
-        if message.startswith(DATA_PREFIX):
-            data = data_processor.process_sensor_data(message)
-            if data:
-                logger.info(f"Data received: {data}")
+#     try:
+#         if message.startswith(DATA_PREFIX):
+#             data = data_processor.process_sensor_data(message)
+#             if data:
+#                 logger.info(f"Data received: {data}")
                 
-        elif message.startswith(STATUS_PREFIX):
-            status = data_processor.process_status_data(message)
-            if status and data_processor.current_data:
-                logger.info(f"Status received: {status}")
-                try:
-                    with app.app_context():
-                        db_manager.save_sensor_data(data_processor.current_data, status)
-                        logger.info("Data saved successfully")
-                except Exception as e:
-                    logger.error(f"Database save error: {str(e)}")
+#         elif message.startswith(STATUS_PREFIX):
+#             status = data_processor.process_status_data(message)
+#             if status and data_processor.current_data:
+#                 logger.info(f"Status received: {status}")
+#                 try:
+#                     with app.app_context():
+#                         db_manager.save_sensor_data(data_processor.current_data, status)
+#                         logger.info("Data saved successfully")
+#                 except Exception as e:
+#                     logger.error(f"Database save error: {str(e)}")
                 
-        else:
-            logger.warning(f"Unknown message type: {message}")
+#         else:
+#             logger.warning(f"Unknown message type: {message}")
             
-    except Exception as e:
-        logger.error(f"Error processing message: {str(e)}")
-        raise
+#     except Exception as e:
+#         logger.error(f"Error processing message: {str(e)}")
+#         raise
 
-class DatabaseManager:
-    @staticmethod
-    def save_sensor_data(data, status):
-        try:
-            # Determine which table to use based on St value
-            if data.get('St') == 1:
-                model = SensorData0
-            else:
-                model = SensorData
+# class DatabaseManager:
+#     @staticmethod
+#     def save_sensor_data(data, status):
+#         try:
+#             print("\n=== Database Save Operation ===")
+#             print(f"St value: {data.get('St')}")
+            
+#             # Create record based on St value
+#             if data.get('St') == 1:
+#                 model = SensorData0
+#                 print("Using SensorData0 table")
+#             else:
+#                 model = SensorData
+#                 print("Using SensorData table")
 
-            new_record = model(**data)
-            db.session.add(new_record)
-            
-            # Update status table
-            status_record = StatusData(**status)
-            db.session.query(StatusData).delete()
-            db.session.add(status_record)
-            
-            db.session.commit()
-            socketio.emit('new_data', data)
-            socketio.emit('status_update', status)
-            return True
-            
-        except Exception as e:
-            logger.error(f"Database error: {str(e)}")
-            db.session.rollback()
-            return False
+#             # Create new record
+#             new_record = model(
+#                 date=data['date'],
+#                 time=data['time'],
+#                 teensytime=data['teensytime'],
+#                 pressure1=data['pressure1'],
+#                 pressure2=data['pressure2'],
+#                 St=data['St'],
+#                 temperature1=data['temperature1'],
+#                 loadcell=data['loadcell']
+#             )
+
+#             # Save and verify
+#             db.session.add(new_record)
+#             db.session.commit()
+#             print(f"Successfully saved record to {model.__name__}")
+#             return True
+
+#         except Exception as e:
+#             print(f"Error in save_sensor_data: {e}")
+#             db.session.rollback()
+#             raise
 # class DatabaseManager:
 #     @staticmethod
 #     def save_sensor_data(data, status):
@@ -322,136 +332,50 @@ class DatabaseManager:
 #             db.session.rollback()
 #             return False
 
-# date1 = None
-# time1 = None
-# teensytime = None
-# pressure1 = None
-# pressure2 = None
-# pressure3 = None
-# temperature1 = None
-# loadcell = None
-# status_all_one_flag = False
+date1 = None
+time1 = None
+teensytime = None
+pressure1 = None
+pressure2 = None
+St = None
+temperature1 = None
+loadcell = None
+status_all_one_flag = False
 
-# def filter_message(message):
-#     if message.startswith("D:"):
-#         global data, date1, time1,teensytime, pressure1, pressure2, pressure3, temperature1, loadcell, status_all_one_flag
-#         data = message[2:]
-#         print("Data message received:", data)
-#         # Convert the data string to a dictionary
-#         data_dict = json.loads(data)
-#         # Assign values to variables
-#         date_time = datetime.now()
-#         date1 = date_time.strftime('%Y-%m-%d')
-#         time1 = date_time.strftime('%H:%M:%S:%f')[:-3]
-#         teensytime = data_dict.get('T')
-#         pressure1 = data_dict.get('p1')
-#         pressure2 = data_dict.get('p2')
-#         pressure3 = data_dict.get('p3')
-#         temperature1 = data_dict.get('T1')
-#         loadcell = data_dict.get('LC')
-
-#         # print("teensytime:", teensytime)
-#         # print("pressure1:", pressure1)
-#         # print("pressure2:", pressure2)
-#         # print("pressure3:", pressure3)
-#         # print("temperature1:", temperature1)
-#         # print("loadcell:", loadcell)
-#         # new_record = SensorData0(
-#         #     date=date1,
-#         #     time=time1,
-#         #     teensytime=teensytime,
-#         #     pressure1=pressure1,
-#         #     pressure2=pressure2,
-#         #     pressure3=pressure3,
-#         #     temperature1=temperature1,
-#         #     loadcell=loadcell
-#         # )
-
-#         # with app.app_context():
-#         #     db.session.add(new_record)
-#         #     db.session.commit()
-#             # Emit the new data to all connected clients
-#             # socketio.emit('new_data', {
-#             #     'date': date,
-#             #     'time': time,
-#             #     'pressure1': pressure1,
-#             #     'pressure2': pressure2,
-#             #     'pressure3': pressure3,
-#             #     'temperature1': temperature1,
-#             #     'temperature2': temperature2
-#             # })
-
-#     elif message.startswith("S:"):
-#         status = message[2:]
-#         print("Status message received:", status)
-#         status_dict = json.loads(status)
-
-#         with app.app_context():
-#             existing_record = StatusData.query.first()
-#             if existing_record is None:
-#                 new_status = StatusData(
-#                     k1=status_dict.get('k1'),
-#                     k2=status_dict.get('k2'),
-#                     k3=status_dict.get('k3'),
-#                     st=status_dict.get('St')
-
-#                 )
-#                 db.session.add(new_status)
-#             else:
-#                 existing_record.k1 = status_dict.get('k1')
-#                 existing_record.k2 = status_dict.get('k2')
-#                 existing_record.k3 = status_dict.get('k3')
-#                 existing_record.st = status_dict.get('St')
-#             db.session.commit()
-#             # socketio.emit('status', {
-#             #     'k1': status_dict.get('k1'),
-#             #     'k2': status_dict.get('k2'),
-#             #     'k3': status_dict.get('k3')
-#             # })
-#         # Check if all status values are 1 and store in SensorData
-#             # if status_dict.get('k1') == 1 and status_dict.get('k2') == 1 and status_dict.get('k3') == 1:
-#             #     status_all_one_flag = True
-
+def filter_message(message):
+    if message.startswith("D:"):
+        try:
+            data = json.loads(message[2:])
+            print("Data message received:", data)
             
-#             if all(status_dict.get(k) == 1 for k in ('k1', 'k2', 'k3')):
-#                 new_record = SensorData(
-#                 date=date1,
-#                 time=time1,
-#                 teensytime=teensytime,
-#                 pressure1=pressure1,
-#                 pressure2=pressure2,
-#                 pressure3=pressure3,
-#                 temperature1=temperature1,
-#                 loadcell=loadcell
-#             )
-#             elif all(status_dict.get(k) == 1 for k in ('k1', 'k2')):
-#                 new_record = SensorData1(
-#                 date=date1,
-#                 time=time1,
-#                 teensytime=teensytime,
-#                 pressure1=pressure1,
-#                 pressure2=pressure2,
-#                 pressure3=pressure3,
-#                 temperature1=temperature1,
-#                 loadcell=loadcell
-#                 )
-#             else:
-#                 new_record = SensorData0(
-#                 date=date1,
-#                 time=time1,
-#                 teensytime=teensytime,
-#                 pressure1=pressure1,
-#                 pressure2=pressure2,
-#                 pressure3=pressure3,
-#                 temperature1=temperature1,
-#                 loadcell=loadcell 
-#             )
+            # Create record data with current timestamp
+            date_time = datetime.now()
+            record_data = {
+                'date': date_time.strftime('%Y-%m-%d'),
+                'time': date_time.strftime('%H:%M:%S:%f')[:-3],
+                'teensytime': data.get('T'),
+                'pressure1': data.get('p1'),
+                'pressure2': data.get('p2'),
+                'St': data.get('ST', 0),  # Default to 0 if ST not present
+                'temperature1': data.get('T1'),
+                'loadcell': data.get('LC')
+            }
 
-#             db.session.add(new_record)
-#             db.session.commit()
+            with app.app_context():
+                # Choose table based on ST value
+                model = SensorData if data.get('ST') == 1 else SensorData0
+                new_record = model(**record_data)
+                db.session.add(new_record)
+                db.session.commit()
+                print(f"Data saved to {model.__name__}")
 
-#     else:
-#         print("Unknown message type:", message)
+        except json.JSONDecodeError as e:
+            print(f"JSON decode error: {e}")
+        except Exception as e:
+            print(f"Error saving data: {e}")
+            db.session.rollback()
+
+    # ... rest of the existing code for status messages ...
 
 # @app.route('/data', methods=['POST'])
 # def receive_data():
