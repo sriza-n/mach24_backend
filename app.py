@@ -356,7 +356,7 @@ def filter_message(message):
                 'teensytime': data.get('T'),
                 'pressure1': data.get('p1'),
                 'pressure2': data.get('p2'),
-                'St': data.get('ST', 0),  # Default to 0 if ST not present
+                'St': data.get('ST'),  # Default to 0 if ST not present
                 'temperature1': data.get('T1'),
                 'loadcell': data.get('LC')
             }
@@ -367,7 +367,7 @@ def filter_message(message):
                 new_record = model(**record_data)
                 db.session.add(new_record)
                 db.session.commit()
-                print(f"Data saved to {model.__name__}")
+                # print(f"Data saved to {model.__name__}")
 
         except json.JSONDecodeError as e:
             print(f"JSON decode error: {e}")
