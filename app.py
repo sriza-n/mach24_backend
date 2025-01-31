@@ -391,7 +391,7 @@ def filter_message(message):
 
 @app.route('/visualize', methods=['GET'])
 def visualize_data():
-    records = SensorData0.query.order_by(SensorData0.id.desc()).all()
+    records = SensorData.query.order_by(SensorData.id.desc()).all()
     data = [
         {"date": record.date,
         "time":record.time,
@@ -409,7 +409,7 @@ def visualize_data():
 
 @app.route('/stream', methods=['GET'])
 def stream_data():
-    records = SensorData0.query.order_by(SensorData0.id.desc()).all()
+    records = SensorData.query.order_by(SensorData.id.desc()).all()
     data = [
         {"date": record.date,
         "time":record.time,
@@ -427,7 +427,7 @@ def stream_data():
 
 @app.route('/latest_data', methods=['GET'])
 def latest_data():
-    records = SensorData0.query.order_by(SensorData0.id.desc()).limit(1).all()
+    records = SensorData.query.order_by(SensorData.id.desc()).limit(1).all()
     data = [
         {
             "date": record.date,
